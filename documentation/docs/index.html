@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="NexPlast v1.0 complete project documentation — architecture, flows, database, demo, and viva guide." />
+  <title>NexPlast Documentation — Circular Economy Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <div class="backdrop" id="backdrop" hidden></div>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Documentation navigation">
+      <div class="brand-block">
+        <p class="logo">NexPlast</p>
+        <p class="tag">v1.0 · Project Handbook</p>
+      </div>
+
+      <div class="search-wrap">
+        <span class="icon" aria-hidden="true">⌕</span>
+        <input id="docSearch" type="search" placeholder="Search docs (Ctrl+K)" autocomplete="off" />
+      </div>
+
+      <nav>
+        <ul class="nav-list">
+          <li><a href="#overview"><span class="num">01</span> Overview</a></li>
+          <li><a href="#stack"><span class="num">02</span> Tech Stack</a></li>
+          <li><a href="#architecture"><span class="num">03</span> Architecture</a></li>
+          <li><a href="#database"><span class="num">04</span> Database</a></li>
+          <li><a href="#user-flow"><span class="num">05</span> User Flow</a></li>
+          <li><a href="#collector-flow"><span class="num">06</span> Collector Flow</a></li>
+          <li><a href="#admin-flow"><span class="num">07</span> Admin Flow</a></li>
+          <li><a href="#recycler-flow"><span class="num">08</span> Recycler Flow</a></li>
+          <li><a href="#ai-workflow"><span class="num">09</span> AI Workflow</a></li>
+          <li><a href="#nature-coins"><span class="num">10</span> Nature Coins</a></li>
+          <li><a href="#gamification"><span class="num">11</span> Gamification</a></li>
+          <li><a href="#folder-guide"><span class="num">12</span> Folder Guide</a></li>
+          <li><a href="#how-to-run"><span class="num">13</span> How to Run</a></li>
+          <li><a href="#how-to-test"><span class="num">14</span> How to Test</a></li>
+          <li><a href="#demo-flow"><span class="num">15</span> Demo Flow</a></li>
+          <li><a href="#handover"><span class="num">16</span> Client Handover</a></li>
+          <li><a href="#viva"><span class="num">17</span> Professor Viva</a></li>
+          <li><a href="#file-explorer"><span class="num">18</span> File Explorer</a></li>
+          <li><a href="#deployment"><span class="num">19</span> Deployment</a></li>
+          <li><a href="#final-summary"><span class="num">20</span> Final Summary</a></li>
+          <li><a href="#project-flow-doc"><span class="num">21</span> Project Flow Doc</a></li>
+          <li><a href="#viva-qa"><span class="num">22</span> Viva Q&amp;A Bank</a></li>
+          <li><a href="#final-review"><span class="num">23</span> Final Project Review</a></li>
+          <li><a href="#testing-checklist"><span class="num">24</span> Testing Checklist</a></li>
+          <li><a href="#admin-ops-guide"><span class="num">25</span> Admin Ops Guide</a></li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-actions">
+        <button type="button" class="btn" id="printBtn">Print / PDF</button>
+        <a class="btn btn-primary" href="#testing-checklist">Test Checklist</a>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open menu">Menu</button>
+        <strong>NexPlast Documentation</strong>
+        <span style="color:var(--muted);font-size:0.85rem">Circular Economy · AI · Nature Coins</span>
+      </header>
+
+      <main class="content" id="content">
+        <div class="hero-doc">
+          <h1>NexPlast Complete Project Documentation</h1>
+          <p>
+            End-to-end handbook for understanding, running, testing, demonstrating, and defending
+            NexPlast — a circular economy platform that turns plastic waste into verified inventory,
+            recycler revenue, Nature Coin rewards, and eco-marketplace redemption.
+          </p>
+          <div class="meta-row">
+            <span class="chip ok">Version 1.0</span>
+            <span class="chip ok">Demo Ready</span>
+            <span class="chip">Next.js 15 · Prisma · FastAPI · YOLOv8</span>
+            <span class="chip">College Final Year</span>
+          </div>
+        </div>
+
+        <div id="searchEmpty" class="search-empty">No sections match your search. Clear the box or try another keyword.</div>
+
+        <!-- 1 -->
+        <section class="doc-section" id="overview">
+          <h2>1. Project Overview</h2>
+
+          <h3>Problem Statement</h3>
+          <p>
+            Household plastic is often discarded without sorting, tracking, or fair incentives.
+            Informal collection lacks verification, recyclers cannot reliably source graded stock,
+            and users have no transparent reward for participating in recycling.
+          </p>
+
+          <h3>Solution</h3>
+          <p>
+            NexPlast is a full-stack circular platform: users upload waste photos, AI estimates
+            plastic type and risk, collectors verify weight/quality with OTP, inventory is stocked,
+            recyclers purchase lots (platform revenue), Nature Coins credit the user wallet, and
+            coins redeem eco products in the marketplace.
+          </p>
+
+          <h3>Objectives</h3>
+          <ul>
+            <li>Digitize plastic sell → pickup → verify → reward.</li>
+            <li>Use AI as a trust layer (detection, confidence, fraud heuristics).</li>
+            <li>Operate role-based ops for User, Collector, Recycler, Admin.</li>
+            <li>Close the loop with inventory sales and marketplace engagement.</li>
+            <li>Measure environmental impact and gamify participation.</li>
+          </ul>
+
+          <h3>Business Model</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Lever</th><th>v1.0 Status</th></tr></thead>
+              <tbody>
+                <tr><td>Plastic lot sales to recyclers</td><td>Live — purchase records INR at unit price × kg</td></tr>
+                <tr><td>Marketplace margin / commission</td><td>Ready via product pricing</td></tr>
+                <tr><td>Brand partnerships</td><td>Future architecture</td></tr>
+                <tr><td>Government contracts</td><td>Future architecture</td></tr>
+                <tr><td>Carbon credits</td><td>Future architecture (impact metrics seed the claim)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Circular Economy Flow</h3>
+          <div class="diagram"><pre>Plastic Waste → User Submit → AI Detect → Collector Verify
+       → Platform Inventory → Recycler Purchase (Revenue)
+       → Nature Coins → Marketplace Redeem → Repeat Engagement</pre></div>
+
+          <h3>Nature Coin System</h3>
+          <p>
+            Internal reward unit (not cash-withdrawable). Credited after collector verification based
+            on verified weight, quality, and category rates. Spent in marketplace (coins, cash, or hybrid).
+          </p>
+
+          <h3>Marketplace System</h3>
+          <p>
+            Eco products with categories, search/filters, wishlist, cart, hybrid checkout, orders,
+            reviews, and PDF invoices.
+          </p>
+
+          <h3>AI Integration</h3>
+          <p>
+            Images upload to Cloudinary. Next.js server calls FastAPI YOLOv8 (or local fallback).
+            Bounding boxes, class counts, confidence, duplicate-image hash, and risk score feed the listing.
+          </p>
+
+          <h3>User Roles</h3>
+          <div class="card-grid">
+            <div class="card"><h4>USER</h4><p>Sell plastic, wallet, marketplace, impact, leaderboard.</p></div>
+            <div class="card"><h4>COLLECTOR</h4><p>Assigned pickups, OTP, verify weight, proof, complete.</p></div>
+            <div class="card"><h4>RECYCLER</h4><p>Browse platform lots, purchase, history.</p></div>
+            <div class="card"><h4>ADMIN</h4><p>Users, listings, inventory, AI flags, analytics, exports.</p></div>
+          </div>
+        </section>
+
+        <!-- 2 -->
+        <section class="doc-section" id="stack">
+          <h2>2. Technology Stack</h2>
+          <p>Why each technology was chosen for a college-scale, demo-ready circular platform:</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Technology</th><th>Role</th><th>Why chosen</th></tr></thead>
+              <tbody>
+                <tr><td>Next.js 15</td><td>App Router UI + APIs + Server Actions</td><td>SSR/RSC, file routes, one codebase for web app</td></tr>
+                <tr><td>TypeScript</td><td>Type safety</td><td>Fewer runtime surprises across Prisma + forms</td></tr>
+                <tr><td>Tailwind CSS 4</td><td>Styling</td><td>Fast, consistent UI without heavy CSS debt</td></tr>
+                <tr><td>shadcn / Radix</td><td>Accessible components</td><td>Production-quality primitives</td></tr>
+                <tr><td>Prisma 6</td><td>ORM + migrations</td><td>Typed models, clear schema for viva</td></tr>
+                <tr><td>PostgreSQL (Neon)</td><td>Primary DB</td><td>Relational integrity for wallets &amp; inventory</td></tr>
+                <tr><td>Auth.js (NextAuth v5)</td><td>Auth</td><td>Credentials + Google OAuth, JWT sessions</td></tr>
+                <tr><td>FastAPI</td><td>AI microservice</td><td>Python ML ecosystem, OpenAPI, isolation</td></tr>
+                <tr><td>YOLOv8</td><td>Object detection</td><td>Practical CV for waste photos</td></tr>
+                <tr><td>OpenCV</td><td>Image helpers</td><td>Pre/post-processing in AI service</td></tr>
+                <tr><td>Cloudinary</td><td>Media CDN</td><td>Secure uploads without local disk</td></tr>
+                <tr><td>Zustand</td><td>Client state</td><td>Light cart/UI state where needed</td></tr>
+                <tr><td>React Hook Form + Zod</td><td>Forms + validation</td><td>Server-aligned schemas</td></tr>
+                <tr><td>TanStack Query</td><td>Client data (where used)</td><td>Caching / refetch patterns</td></tr>
+                <tr><td>Recharts</td><td>Admin charts</td><td>Readable analytics for demos</td></tr>
+                <tr><td>bcryptjs</td><td>Password hashing</td><td>Standard credential security</td></tr>
+                <tr><td>pdf-lib / qrcode / nodemailer</td><td>Docs, QR, email</td><td>Invoices, profile QR, optional SMTP</td></tr>
+                <tr><td>Bun</td><td>Package runner</td><td>Fast install/scripts for this repo</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3 -->
+        <section class="doc-section" id="architecture">
+          <h2>3. Project Architecture</h2>
+
+          <h3>Overall Architecture</h3>
+          <div class="diagram"><pre>
+┌────────────┐     HTTPS      ┌──────────────────────────────┐
+│   Browser  │ ─────────────► │  Next.js 15 (App Router)     │
+└────────────┘                │  RSC · Server Actions · API  │
+                              └──────────────┬───────────────┘
+                     ┌───────────────────────┼───────────────────────┐
+                     ▼                       ▼                       ▼
+              Neon PostgreSQL          Cloudinary           FastAPI AI :8001
+              (Prisma ORM)             (images)             (YOLOv8)
+</pre></div>
+
+          <h3>Next.js Architecture</h3>
+          <ul>
+            <li><code>src/app</code> — route groups: <code>(auth)</code>, <code>(dashboard)</code>, <code>(collector)</code>, <code>(admin)</code>, <code>(recycler)</code>, <code>(marketplace)</code>.</li>
+            <li><code>src/features</code> — domain modules (plastic, wallet, marketplace, ai, recycler…).</li>
+            <li><code>middleware.ts</code> — session + RBAC path guards.</li>
+            <li>AI secrets and detection run server-side only.</li>
+          </ul>
+
+          <h3>FastAPI AI Architecture</h3>
+          <div class="diagram"><pre>POST /detect  → load image → YOLO infer → map labels
+             → confidence / counts → fraud heuristics → JSON
+GET /health · GET /version</pre></div>
+
+          <h3>Authentication Flow</h3>
+          <div class="diagram"><pre>Register/Login → Auth.js Credentials or Google
+→ Prisma User (+ Wallet on register)
+→ JWT session (role, id)
+→ Middleware enforces role homes
+→ Soft-delete (deletedAt) / isActive block sign-in</pre></div>
+
+          <h3>Database Architecture</h3>
+          <p>Core hubs: <strong>User</strong> → Wallet, Listings, Orders; <strong>PickupRequest</strong> → Verification → Inventory; <strong>Product</strong> → Cart/Order; gamification &amp; notifications attach to User.</p>
+
+          <h3>Marketplace Architecture</h3>
+          <div class="diagram"><pre>Catalog → Cart → Checkout (cash | coins | hybrid)
+→ Order + OrderItems → Wallet spend TX → Reviews / Invoice PDF</pre></div>
+
+          <h3>Collector Workflow</h3>
+          <div class="diagram"><pre>Assigned → Navigate → OTP → Weight/Quality/Proof
+→ Complete → Wallet credit + Inventory IN + Impact update</pre></div>
+
+          <h3>Wallet Workflow</h3>
+          <div class="diagram"><pre>EARN (verify) / SPEND (checkout) / ADJUST (admin)
+→ WalletTransaction ledger · balance never goes negative on spend</pre></div>
+
+          <h3>AI Detection Workflow</h3>
+          <div class="diagram"><pre>Upload → Cloudinary URL → detectPlasticInImage
+→ FastAPI or fallback → AiDetectionResult → listing UI</pre></div>
+
+          <h3>Order Workflow</h3>
+          <div class="diagram"><pre>Checkout validate stock/coins → create Order
+→ decrement product stock → wallet SPEND → notify</pre></div>
+
+          <h3>Notification Flow</h3>
+          <div class="diagram"><pre>Domain event (pickup, coins, order) → Notification row
+→ /notifications UI (filters, mark read, delete)
+→ optional email via Nodemailer when SMTP set</pre></div>
+        </section>
+
+        <!-- 4 -->
+        <section class="doc-section" id="database">
+          <h2>4. Complete Database Documentation</h2>
+          <p>Prisma models (PostgreSQL). Relationships use foreign keys; wallet and inventory updates run inside transactions.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Model</th><th>Purpose</th><th>Key relations</th></tr></thead>
+              <tbody>
+                <tr><td>User / Account / Session</td><td>Identity &amp; Auth.js</td><td>Profile, Wallet, roles</td></tr>
+                <tr><td>UserProfile</td><td>Address, referral QR code</td><td>User 1:1</td></tr>
+                <tr><td>Wallet / WalletTransaction</td><td>Nature Coin balances &amp; ledger</td><td>User 1:1; TX many</td></tr>
+                <tr><td>PlasticCategory / PlasticListing / ListingItem / ListingImage</td><td>Sell flow</td><td>User owns listing</td></tr>
+                <tr><td>AiDetectionResult</td><td>Stored AI output</td><td>Listing / image</td></tr>
+                <tr><td>Collector / PickupRequest / CollectorVerification</td><td>Field ops</td><td>Listing ↔ Collector</td></tr>
+                <tr><td>Recycler / Inventory / InventoryMovement</td><td>Stock &amp; lot sales</td><td>Platform ↔ Recycler owners</td></tr>
+                <tr><td>MarketplaceCategory / Product / ProductImage</td><td>Catalog</td><td>Admin-managed</td></tr>
+                <tr><td>Cart / CartItem / Order / OrderItem / Review / Wishlist</td><td>Commerce</td><td>User-owned</td></tr>
+                <tr><td>Badge / UserBadge / Achievement / Leaderboard</td><td>Gamification</td><td>User</td></tr>
+                <tr><td>EnvironmentalImpact</td><td>CO₂, trees, plastic metrics</td><td>User</td></tr>
+                <tr><td>Notification / SupportTicket</td><td>Comms</td><td>User</td></tr>
+                <tr><td>AdminLog / AuditLog / AppSettings</td><td>Ops &amp; config</td><td>Admin actions</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Example: post-verification data flow</h3>
+          <ol>
+            <li><code>CollectorVerification</code> stores verified kg / quality.</li>
+            <li><code>WalletTransaction</code> EARN updates <code>Wallet.balance</code>.</li>
+            <li><code>Inventory</code> PLATFORM lot IN + <code>InventoryMovement</code>.</li>
+            <li><code>EnvironmentalImpact</code> increments recycled kg equivalents.</li>
+            <li>Recycler purchase: PLATFORM OUT (no negative stock) + recycler IN + payment amount.</li>
+          </ol>
+
+          <div class="callout">
+            Soft delete: <code>User.deletedAt</code>. Auth rejects deleted users. Prefer ledger rows over deleting money/inventory history.
+          </div>
+        </section>
+
+        <!-- 5 -->
+        <section class="doc-section" id="user-flow">
+          <h2>5. Complete User Flow</h2>
+          <div class="diagram"><pre>Register → Login → Dashboard → Sell Plastic → Upload Image → AI Detection
+→ Review / Edit → Schedule Pickup → Confirmation → Collector Assigned
+→ Pickup Complete → Coins Credited → Wallet Updated → Marketplace
+→ Checkout → Orders → Impact → Leaderboard</pre></div>
+
+          <ol>
+            <li><strong>Register / Login</strong> — email/password or Google; wallet created.</li>
+            <li><strong>Dashboard</strong> — summary of listings, coins, impact.</li>
+            <li><strong>Sell Plastic</strong> — <code>/sell</code> create listing + images.</li>
+            <li><strong>AI Detection</strong> — server analyzes images; user may adjust estimates.</li>
+            <li><strong>Pickup booking</strong> — schedule window; status progresses.</li>
+            <li><strong>Collector completes</strong> — OTP + verified weight.</li>
+            <li><strong>Wallet</strong> — coins appear with history.</li>
+            <li><strong>Marketplace</strong> — browse, wishlist, cart, hybrid pay.</li>
+            <li><strong>Orders</strong> — status + invoice PDF.</li>
+            <li><strong>Impact / Leaderboard</strong> — gamified retention.</li>
+          </ol>
+        </section>
+
+        <!-- 6 -->
+        <section class="doc-section" id="collector-flow">
+          <h2>6. Collector Flow</h2>
+          <div class="diagram"><pre>Login → Assigned Pickups → Start / Navigate → OTP
+→ Verify Quantity &amp; Weight → Upload Proof → Complete
+→ Inventory Updated → User Wallet Credited → Performance</pre></div>
+
+          <h3>Database updates on complete</h3>
+          <ul>
+            <li>Pickup status → verified/completed.</li>
+            <li><code>CollectorVerification</code> row with weight, quality, photos.</li>
+            <li>User <code>Wallet</code> + EARN transaction (weight/quality/category based).</li>
+            <li>Platform <code>Inventory</code> quantity increase + IN movement.</li>
+            <li>Notifications to user; collector stats/performance fields updated.</li>
+          </ul>
+          <p>Key routes: <code>/collector</code>, <code>/collector/assigned</code>, <code>/collector/pickups/[id]</code>, <code>/collector/navigation</code>.</p>
+        </section>
+
+        <!-- 7 -->
+        <section class="doc-section" id="admin-flow">
+          <h2>7. Admin Flow</h2>
+          <div class="diagram"><pre>Login → Dashboard → Users / Collectors / Listings / Inventory
+→ Wallet adjustments → Marketplace products → AI review
+→ Pickup assignment → Reports / Analytics → CSV exports → Settings</pre></div>
+          <div class="card-grid">
+            <div class="card"><h4>Users &amp; Collectors</h4><p>Activate, roles, soft-delete, collector profiles.</p></div>
+            <div class="card"><h4>Listings &amp; Pickups</h4><p>Approve/flag, assign collectors.</p></div>
+            <div class="card"><h4>Inventory &amp; Coins</h4><p>Stock view, manual wallet adjust with audit.</p></div>
+            <div class="card"><h4>AI &amp; Reports</h4><p>Flagged detections, analytics charts, CSV export API.</p></div>
+          </div>
+          <p>
+            Full step-by-step for every admin module (including how to add products):
+            see <a href="#admin-ops-guide">§25 Admin Ops Guide</a>.
+            End-to-end printable demo checklist: <a href="#testing-checklist">§24 Testing Checklist</a>.
+          </p>
+        </section>
+
+        <!-- 8 -->
+        <section class="doc-section" id="recycler-flow">
+          <h2>8. Recycler Flow</h2>
+          <p>
+            Recyclers use <code>/recycler</code> (not the household dashboard). They browse platform-owned
+            inventory lots, purchase a quantity (kg), and see order/history.
+          </p>
+          <h3>Inventory movement</h3>
+          <ol>
+            <li>Validate available platform stock (reject if would go negative).</li>
+            <li>Record payment (<code>unitPriceInr × kg</code>) — primary live revenue path.</li>
+            <li>PLATFORM inventory OUT + movement; Recycler inventory IN + movement.</li>
+            <li>Audit/admin log for the purchase.</li>
+          </ol>
+          <h3>Future workflow</h3>
+          <p>Invoices, delivery SLAs, quality disputes, B2B contracts, and carbon certificate export.</p>
+        </section>
+
+        <!-- 9 -->
+        <section class="doc-section" id="ai-workflow">
+          <h2>9. AI Workflow</h2>
+          <div class="diagram"><pre>Image Upload → Cloudinary → Next.js server
+→ FastAPI /detect (YOLOv8) → Detection + counts + confidence
+→ Fraud / duplicate hash / risk score → AiDetectionResult DB
+→ Sell UI / Admin AI dashboard</pre></div>
+          <ul>
+            <li>Browser never holds AI API keys; proxies under <code>/api/ai/*</code>.</li>
+            <li>Duplicate content-hash can skip re-detection.</li>
+            <li>If AI service is down, local fallback analysis keeps demos alive.</li>
+            <li>Admin <code>/admin/ai</code> reviews flags and risk.</li>
+          </ul>
+        </section>
+
+        <!-- 10 -->
+        <section class="doc-section" id="nature-coins">
+          <h2>10. Nature Coin System</h2>
+          <div class="callout">
+            <strong>Rule of thumb for demos:</strong> ≈ 100 g = 1 coin ⇒ 1 kg ≈ 10 coins.
+            Actual credit uses configured category rates × verified weight × quality/bonus factors — never quantity of items alone.
+          </div>
+          <h3>20 kg example</h3>
+          <p>At 10 coins/kg baseline → ~200 coins (before quality/category multipliers).</p>
+          <ul>
+            <li><strong>Internal reward</strong> — cannot withdraw as INR.</li>
+            <li><strong>Marketplace</strong> — full coin, cash, or hybrid (shipping may remain cash).</li>
+            <li><strong>Wallet</strong> — balance + pending + ledger history; admin adjustments audited.</li>
+            <li><strong>Rollback</strong> — transactional checkout; failed spend does not leave partial debit.</li>
+          </ul>
+        </section>
+
+        <!-- 11 -->
+        <section class="doc-section" id="gamification">
+          <h2>11. Gamification</h2>
+          <ul>
+            <li><strong>Levels:</strong> Bronze → Silver → Gold → Platinum (progress from recycled weight / coins).</li>
+            <li><strong>Badges &amp; Achievements:</strong> milestone awards stored in Badge / UserBadge / Achievement.</li>
+            <li><strong>Leaderboard:</strong> ranked impact/coins for friendly competition.</li>
+            <li><strong>Environmental Impact:</strong> plastic recycled, CO₂ reduced, trees saved, ocean plastic prevented, energy saved.</li>
+            <li><strong>Challenges:</strong> future scope (weekly goals).</li>
+          </ul>
+        </section>
+
+        <!-- 12 -->
+        <section class="doc-section" id="folder-guide">
+          <h2>12. Project Folder Guide</h2>
+          <pre class="code-block">Nextplast/
+├── src/app/                 Routes &amp; layouts by role
+├── src/features/            Domain logic (auth, plastic, wallet, ai, recycler…)
+├── src/components/          Shared UI
+├── src/services/            email, pdf, qr, storage
+├── src/lib/                 prisma, utils, auth helpers
+├── prisma/                  schema + migrations
+├── services/ai-service/     FastAPI YOLOv8
+├── scripts/                 seed-demo, promote-admin
+└── documentation/docs/      This handbook (index.html)
+                             — includes Project Flow, Viva Q&amp;A, Final Review</pre>
+          <p>Find authentication under <code>src/auth.ts</code> + <code>src/features/auth</code>; marketplace under <code>src/features/marketplace</code> and <code>(marketplace)</code> routes; AI under <code>src/features/ai</code> + <code>services/ai-service</code>.</p>
+        </section>
+
+        <!-- 13 -->
+        <section class="doc-section" id="how-to-run">
+          <h2>13. How To Run The Project</h2>
+          <h3>Requirements</h3>
+          <ul>
+            <li>Node.js 20+ and Bun</li>
+            <li>Python 3.10+ (AI service)</li>
+            <li>PostgreSQL via Neon (or local)</li>
+            <li>Cloudinary account</li>
+            <li>Google OAuth credentials (optional but recommended)</li>
+          </ul>
+          <h3>App setup</h3>
+          <pre class="code-block">bun install
+cp .env.example .env          # fill secrets — never commit .env
+bun run db:generate
+bunx prisma migrate deploy
+bun run db:seed               # demo users password Demo@12345
+bun run dev                   # http://localhost:3000</pre>
+          <h3>AI service</h3>
+          <pre class="code-block">cd services/ai-service
+python -m venv .venv
+# Windows: .\.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+# from repo root:
+bun run ai:dev                # http://127.0.0.1:8001</pre>
+          <h3>Key env vars</h3>
+          <p><code>DATABASE_URL</code>, <code>NEXTAUTH_URL</code>, <code>NEXTAUTH_SECRET</code>, <code>AUTH_GOOGLE_*</code>, <code>CLOUDINARY_*</code>, optional <code>AI_SERVICE_URL</code> / <code>AI_SERVICE_API_KEY</code>, optional SMTP.</p>
+          <h3>Demo credentials (after seed)</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Role</th><th>Email</th><th>Password</th></tr></thead>
+              <tbody>
+                <tr><td>Admin</td><td>admin1@demo.nexplast.local</td><td>Demo@12345</td></tr>
+                <tr><td>User</td><td>user1@demo.nexplast.local</td><td>Demo@12345</td></tr>
+                <tr><td>Collector</td><td>collector1@demo.nexplast.local</td><td>Demo@12345</td></tr>
+                <tr><td>Recycler</td><td>recycler1@demo.nexplast.local</td><td>Demo@12345</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 14 -->
+        <section class="doc-section" id="how-to-test">
+          <h2>14. How To Test The Project</h2>
+          <ol>
+            <li><strong>Auth</strong> — register new user; login; logout; Google if configured; soft-deleted user cannot login.</li>
+            <li><strong>Sell + AI</strong> — upload plastic photo on <code>/sell</code>; confirm detection UI; edit estimates; book pickup.</li>
+            <li><strong>Admin assign</strong> — as admin, assign collector on pickup requests.</li>
+            <li><strong>Collector verify</strong> — OTP, weight, proof, complete; check user wallet + inventory.</li>
+            <li><strong>Recycler</strong> — purchase lot; stock decreases; history shows payment.</li>
+            <li><strong>Marketplace</strong> — add to cart; hybrid checkout; order appears; invoice PDF.</li>
+            <li><strong>Wallet</strong> — earn/spend history; admin adjustment (if demoing ops).</li>
+            <li><strong>Notifications</strong> — mark read / delete.</li>
+            <li><strong>Reports</strong> — admin analytics + CSV export.</li>
+            <li><strong>AI dashboard</strong> — <code>/ai</code> and <code>/admin/ai</code>.</li>
+          </ol>
+          <p>Quality gates: <code>bun run typecheck</code>, <code>bun run lint</code>, <code>bun run db:validate</code>, <code>bun run build</code>.</p>
+          <p>
+            Full printable page-by-page checklist with OTP/coins/marketplace/recycler steps:
+            <a href="#testing-checklist">§24 Testing Checklist</a>.
+            Admin module how-tos (including add products):
+            <a href="#admin-ops-guide">§25 Admin Ops Guide</a>.
+          </p>
+        </section>
+
+        <!-- 15 -->
+        <section class="doc-section" id="demo-flow">
+          <h2>15. Demo Flow (Professor Presentation)</h2>
+          <div class="diagram"><pre>Landing → Problem/Solution pitch → User login → Sell + AI
+→ Admin assign → Collector complete → Wallet coins
+→ Marketplace redeem → Orders → Impact / Leaderboard
+→ AI dashboard → Recycler purchase → Admin reports</pre></div>
+          <h4>Talking points</h4>
+          <ul>
+            <li><strong>Landing:</strong> circular economy, not a dumpster app.</li>
+            <li><strong>Sell + AI:</strong> trust layer before pickup cost is spent.</li>
+            <li><strong>Collector OTP:</strong> prevents fake completions.</li>
+            <li><strong>Coins:</strong> engagement currency tied to verified kg.</li>
+            <li><strong>Marketplace:</strong> retention + secondary revenue.</li>
+            <li><strong>Recycler:</strong> primary inventory monetization.</li>
+            <li><strong>Admin:</strong> governance for a real ops system.</li>
+          </ul>
+        </section>
+
+        <!-- 16 -->
+        <section class="doc-section" id="handover">
+          <h2>16. Client Handover Guide</h2>
+          <ul>
+            <li>Install Git, VS Code, Node 20+, Bun, Python 3.10+.</li>
+            <li>Create Neon database; copy connection string to <code>DATABASE_URL</code>.</li>
+            <li>Create Cloudinary + Google OAuth apps; fill <code>.env</code> from <code>.env.example</code>.</li>
+            <li>Never commit <code>.env</code>; rotate secrets if shared.</li>
+            <li>Run migrations, seed, start Next + AI, verify health endpoints.</li>
+            <li>Promote real admin with <code>bun run admin:promote</code> if needed.</li>
+            <li>Local deploy: <code>bun run build &amp;&amp; bun run start</code>; AI via uvicorn production flags.</li>
+          </ul>
+        </section>
+
+        <!-- 17 -->
+        <section class="doc-section" id="viva">
+          <h2>17. Professor Viva Guide</h2>
+          <p>Topic map for oral defense. Full numbered Q&amp;As are in <a href="#viva-qa">§22 Viva Q&amp;A Bank</a>.</p>
+          <ul>
+            <li><strong>Architecture:</strong> Next.js monolith + isolated AI microservice.</li>
+            <li><strong>Database:</strong> relational Prisma schema with ledger-style money/stock.</li>
+            <li><strong>Auth:</strong> Auth.js JWT + RBAC middleware + ownership checks in actions.</li>
+            <li><strong>YOLOv8:</strong> object detection on listing photos; confidence + fraud heuristics.</li>
+            <li><strong>Nature Coins:</strong> internal rewards from verified weight/quality, not item count alone.</li>
+            <li><strong>Fraud:</strong> duplicate hash, risk score, admin flags, collector physical verify.</li>
+            <li><strong>Business:</strong> sell lots to recyclers + marketplace margin; brands/gov/carbon later.</li>
+            <li><strong>Limitations:</strong> COCO mapping without fine-tune; optional SMTP; campus-scale DevOps.</li>
+            <li><strong>Future:</strong> fine-tuned models, SMS OTP, Redis queues, carbon exports.</li>
+          </ul>
+        </section>
+
+        <!-- 18 -->
+        <section class="doc-section" id="file-explorer">
+          <h2>18. File Explorer Guide</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Feature</th><th>Where to look</th></tr></thead>
+              <tbody>
+                <tr><td>Authentication</td><td><code>src/auth.ts</code>, <code>src/features/auth</code>, <code>src/app/(auth)</code></td></tr>
+                <tr><td>Dashboard</td><td><code>src/app/(dashboard)/dashboard</code></td></tr>
+                <tr><td>Sell / Plastic</td><td><code>src/features/plastic</code>, <code>/sell</code></td></tr>
+                <tr><td>AI</td><td><code>src/features/ai</code>, <code>services/ai-service</code>, <code>/api/ai/*</code></td></tr>
+                <tr><td>Collector</td><td><code>src/app/(collector)</code>, collector feature services</td></tr>
+                <tr><td>Recycler</td><td><code>src/app/(recycler)</code>, <code>src/features/recycler</code></td></tr>
+                <tr><td>Admin</td><td><code>src/app/(admin)</code></td></tr>
+                <tr><td>Wallet</td><td><code>src/features/wallet</code>, <code>/wallet</code></td></tr>
+                <tr><td>Marketplace</td><td><code>src/features/marketplace</code>, <code>/marketplace</code></td></tr>
+                <tr><td>Inventory</td><td>Prisma models + admin/recycler services</td></tr>
+                <tr><td>Notifications</td><td><code>/notifications</code> + notification feature</td></tr>
+                <tr><td>Prisma</td><td><code>prisma/schema.prisma</code></td></tr>
+                <tr><td>Middleware / RBAC</td><td><code>src/middleware.ts</code>, navigation constants</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 19 -->
+        <section class="doc-section" id="deployment">
+          <h2>19. Deployment Checklist</h2>
+          <ul class="checklist">
+            <li>Production <code>DATABASE_URL</code> and migrations applied</li>
+            <li><code>NEXTAUTH_URL</code> / secret match deploy domain</li>
+            <li>Google OAuth redirect URIs updated</li>
+            <li>Cloudinary production cloud</li>
+            <li>AI service reachable; API key set; CORS not exposing keys to browser</li>
+            <li><code>bun run typecheck</code>, lint, build succeed</li>
+            <li>Demo seed only on staging — wipe or rotate passwords for live</li>
+            <li>SMTP configured if email required</li>
+            <li>No secrets in git; <code>.env</code> gitignored</li>
+            <li>Error pages / offline page smoke-tested</li>
+            <li>Role smoke: user, collector, recycler, admin</li>
+            <li>Circular loop smoke: verify → coins → market → recycler buy</li>
+          </ul>
+        </section>
+
+        <!-- 20 -->
+        <section class="doc-section" id="final-summary">
+          <h2>20. Final Summary</h2>
+          <p>
+            NexPlast v1.0 closes the circular economy loop in software: verified collection creates
+            inventory, recyclers pay for lots, users earn Nature Coins, and the marketplace drives
+            repeat engagement — governed by admin RBAC and assisted by AI.
+          </p>
+
+          <h3>Master flowchart</h3>
+          <div class="diagram"><pre>
+[User] --photo--> [Cloudinary] --url--> [AI YOLO] --result--> [Listing]
+   |                                                      |
+   +---- schedule ----> [Pickup] ----assign----> [Collector]
+                                                  |
+                                            OTP + weight
+                                                  |
+                    [Wallet EARN] &lt;---------------+
+                    [Inventory IN PLATFORM]
+                                                  |
+                                        [Recycler purchase]
+                                                  |
+                         Revenue INR + PLATFORM OUT + Recycler IN
+                                                  |
+[User] --coins--> [Marketplace Checkout] --> [Order] --> Retention
+</pre></div>
+
+          <h3>Sequence (happy path)</h3>
+          <div class="diagram"><pre>User→Next: create listing + images
+Next→Cloudinary: upload
+Next→AI: detect
+AI→Next: boxes, confidence, risk
+User→Next: book pickup
+Admin→Next: assign collector
+Collector→Next: OTP + verify
+Next→DB: wallet++, inventory++, impact++
+Recycler→Next: buy lot
+Next→DB: stock move + payment
+User→Next: marketplace hybrid checkout
+Next→DB: wallet--, order++</pre></div>
+
+          <h3>Fishbone — what makes the loop work</h3>
+          <div class="diagram"><pre>                    Trust (AI + OTP + Admin)
+                           |
+Engagement (Coins/Market)--+--Monetization (Recycler sales)
+                           |
+                    Ops (Collector + Inventory)
+                           |
+                      DATA (Prisma/Postgres)
+</pre></div>
+
+          <div class="callout">
+            NexPlast Version 1.0 has successfully passed functional review, smoke testing,
+            integration validation, and business workflow verification. The application is ready
+            for final-year project demonstration.
+          </div>
+
+          <p class="footer-doc">
+            Documentation generated for handover · Open <code>documentation/docs/index.html</code> in a browser ·
+            Use search (Ctrl+K) · Print for viva notes · See also <a href="#project-flow-doc">Project Flow</a>,
+            <a href="#viva-qa">Viva Q&amp;A</a>, and <a href="#final-review">Final Review</a>.
+          </p>
+        </section>
+
+        <!-- 21 — from PROJECT_FLOW.md -->
+        <section class="doc-section" id="project-flow-doc">
+          <h2>21. Project Flow Document</h2>
+          <p>Full content previously in <code>PROJECT_FLOW.md</code>.</p>
+
+          <h3>Problem Statement</h3>
+          <p>
+            Plastic waste collection is fragmented. Households lack incentives, collectors lack verification tools,
+            and recyclers lack clean supply data. Fake photo submissions and manual weight disputes reduce trust
+            in recycling programs.
+          </p>
+
+          <h3>Solution</h3>
+          <p>
+            <strong>NexPlast</strong> is a circular-economy web platform that connects users, collectors, recyclers,
+            and admins. Users upload plastic photos for AI-assisted detection, schedule pickups, earn
+            <strong>Nature Coins</strong>, and redeem them in an eco marketplace. Collectors verify weight/quality;
+            admins oversee the economy.
+          </p>
+
+          <h3>Objectives</h3>
+          <ol>
+            <li>Digitize plastic sell → pickup → verify → reward.</li>
+            <li>Integrate practical computer vision (YOLOv8) for detection and fraud heuristics.</li>
+            <li>Implement a closed-loop Nature Coin marketplace (no cash conversion).</li>
+            <li>Deliver role-based dashboards for a college-scale deployment (&lt;50 concurrent users).</li>
+          </ol>
+
+          <h3>Technology Stack</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+              <tbody>
+                <tr><td>Frontend</td><td>Next.js 15 App Router, React 19, Tailwind CSS 4</td></tr>
+                <tr><td>Backend</td><td>Next.js Route Handlers + Server Actions</td></tr>
+                <tr><td>Database</td><td>PostgreSQL (Neon) + Prisma ORM</td></tr>
+                <tr><td>Auth</td><td>Auth.js (credentials + Google OAuth)</td></tr>
+                <tr><td>Media</td><td>Cloudinary</td></tr>
+                <tr><td>AI</td><td>FastAPI + Ultralytics YOLOv8</td></tr>
+                <tr><td>Docs / Demo</td><td>CSV export, PDF (pdf-lib), QR (qrcode), Nodemailer</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Architecture</h3>
+          <p>Browser clients never call FastAPI. Next.js authenticates users, proxies AI requests, persists results in Prisma, and serves dashboards.</p>
+          <div class="diagram"><pre>User → Next.js → Prisma/Postgres
+              ↘ Cloudinary
+              ↘ FastAPI /detect (API key)</pre></div>
+
+          <h3>Database Design (high level)</h3>
+          <p>
+            Core models: <code>User</code>, <code>UserProfile</code>, <code>Wallet</code>, <code>PlasticListing</code>,
+            <code>ListingImage</code>, <code>AiDetectionResult</code>, <code>PickupRequest</code>,
+            <code>CollectorVerification</code>, <code>Inventory</code>, <code>Product</code>, <code>Order</code>,
+            <code>Notification</code>, <code>Leaderboard</code>, <code>EnvironmentalImpact</code>, <code>AuditLog</code>.
+          </p>
+
+          <h3>AI Workflow</h3>
+          <ol>
+            <li>User uploads listing images (Cloudinary).</li>
+            <li>Server fetches bytes → FastAPI <code>/detect</code> (or local fallback).</li>
+            <li>Persist boxes, confidence, fraud alerts on <code>AiDetectionResult</code>.</li>
+            <li>Duplicate image hash + low confidence + quantity mismatch checks.</li>
+            <li>Weight estimate is preview-only; collector verification is final for coins.</li>
+          </ol>
+
+          <h3>Marketplace Workflow</h3>
+          <p>Browse → wishlist/cart → hybrid payment split → order → wallet SPEND (coins) → tracking → review.</p>
+
+          <h3>Collector Workflow</h3>
+          <p>Assigned pickups → navigation → on-site verification (weight/quality/OTP) → coins credited → impact updated.</p>
+
+          <h3>Admin Workflow</h3>
+          <p>Users/roles, collector/recycler approval, listings review, inventory, coin economy, analytics, CSV exports, platform settings.</p>
+
+          <h3>Future Scope</h3>
+          <p>Fine-tuned plastic models, Redis queues, SMS OTP, QR scanning, richer Excel packs, recycler B2B marketplace.</p>
+
+          <h3>Advantages</h3>
+          <p>End-to-end recycling loop, measurable impact, practical AI, RBAC, demo-ready seed data.</p>
+
+          <h3>Limitations</h3>
+          <p>
+            College-scale (not multi-region DevOps), YOLO uses COCO-mapped classes unless fine-tuned,
+            email requires SMTP configuration, QR scan not implemented.
+          </p>
+        </section>
+
+        <!-- 22 — from VIVA_QUESTIONS.md -->
+        <section class="doc-section" id="viva-qa">
+          <h2>22. Viva Q&amp;A Bank</h2>
+          <p>Full content previously in <code>VIVA_QUESTIONS.md</code> — 60 short Q&amp;As for final-year viva.</p>
+          <ol class="viva-list">
+            <li><strong>What is NexPlast?</strong> A circular-economy platform for plastic recycling, AI detection, collector verification, Nature Coins, and an eco marketplace.</li>
+            <li><strong>Why Nature Coins instead of cash?</strong> To keep rewards inside the recycling loop and avoid cash-out fraud; coins redeem only in the marketplace.</li>
+            <li><strong>How many grams equal one Nature Coin?</strong> About 100 g of standard recyclable plastic (documentation rule).</li>
+            <li><strong>What is the internal INR value of a coin?</strong> Approximately ₹0.50 — accounting value only, not convertible cash.</li>
+            <li><strong>Which framework powers the web app?</strong> Next.js 15 (App Router) with React 19.</li>
+            <li><strong>Why Server Components?</strong> Reduce client JS, keep secrets server-side, stream UI with Suspense.</li>
+            <li><strong>What is a Server Action?</strong> A server-executed mutation callable from forms/UI without a separate REST handler.</li>
+            <li><strong>How is auth implemented?</strong> Auth.js (NextAuth v5) with credentials + Google OAuth and JWT sessions.</li>
+            <li><strong>What is RBAC?</strong> Role-based access control — middleware and guards restrict routes by <code>UserRole</code>.</li>
+            <li><strong>Name the main roles.</strong> USER, COLLECTOR, RECYCLER, SELLER, ADMIN, SUPER_ADMIN.</li>
+            <li><strong>What ORM is used?</strong> Prisma 6 against PostgreSQL (Neon).</li>
+            <li><strong>Why Prisma migrations?</strong> Versioned schema changes that stay reproducible across environments.</li>
+            <li><strong>Where are listing photos stored?</strong> Cloudinary; DB stores URL/publicId/metadata/hash.</li>
+            <li><strong>Why hash images?</strong> Duplicate-image fraud detection via SHA-256 content hash.</li>
+            <li><strong>What does the AI service do?</strong> Detects plastic-like objects, counts them, returns boxes/confidence/weight preview.</li>
+            <li><strong>Which model family?</strong> Ultralytics YOLOv8 (default <code>yolov8n</code>).</li>
+            <li><strong>Why FastAPI separately?</strong> Keeps heavy CV deps out of Next.js; independent scaling and Python ML stack.</li>
+            <li><strong>How does Next.js talk to FastAPI?</strong> Authenticated server proxy <code>/api/ai/*</code> with <code>X-AI-API-Key</code>.</li>
+            <li><strong>Can the browser call FastAPI?</strong> No — by design.</li>
+            <li><strong>What if AI service is down?</strong> Local image-analysis fallback so sell flow still works.</li>
+            <li><strong>List fraud checks.</strong> Duplicate hash, low confidence, quantity mismatch, AI reject, weight discrepancy.</li>
+            <li><strong>Is AI weight final?</strong> No — preview only; collector verification sets reward weight.</li>
+            <li><strong>What is Confidence Engine?</strong> Combines model score, image quality, category certainty, fraud pressure.</li>
+            <li><strong>How are recommendations generated?</strong> Rule-based (wallet, listings, orders, impact, seasons) — no ML recommender in v1.</li>
+            <li><strong>Explain sell plastic flow.</strong> Draft → upload → AI → edit counts → details → schedule pickup → submit.</li>
+            <li><strong>What happens after pickup verification?</strong> Coins credited, impact updated, listing completed, notifications sent.</li>
+            <li><strong>How is OTP secured?</strong> Hashed in DB; fail counts tracked; raw OTP not stored.</li>
+            <li><strong>Hybrid payment meaning?</strong> Split merchandise between cash INR and Nature Coins; shipping remains cash.</li>
+            <li><strong>How is double checkout prevented?</strong> Checkout id + Postgres advisory lock + cart clear in transaction.</li>
+            <li><strong>What is inventory used for?</strong> Platform stock after verified collections; admin adjustments audited.</li>
+            <li><strong>Admin cannot mutate AI prediction columns — why?</strong> Preserve inference integrity; review decisions are separate.</li>
+            <li><strong>Soft delete vs hard delete?</strong> Soft delete sets <code>deletedAt</code> / deactivates; retains audit history.</li>
+            <li><strong>What does CSV export support?</strong> Users, listings, orders, inventory, wallet txs, leaderboard.</li>
+            <li><strong>PDF library used?</strong> <code>pdf-lib</code> for invoices/statements/summaries architecture.</li>
+            <li><strong>QR library used?</strong> <code>qrcode</code> for pickup/order/listing/referral payloads (scan workflows future).</li>
+            <li><strong>Email library?</strong> Nodemailer with templates; logs when SMTP unset.</li>
+            <li><strong>Dark mode approach?</strong> <code>next-themes</code> with navbar toggle.</li>
+            <li><strong>How is global search scoped for users?</strong> Products + own listings + own orders.</li>
+            <li><strong>Admin search?</strong> Dedicated admin global search across users/listings/pickups/products/orders.</li>
+            <li><strong>Environmental metrics tracked?</strong> Plastic grams, CO₂, trees, ocean plastic, water, energy, oil.</li>
+            <li><strong>Leaderboard periods?</strong> Weekly, monthly, all-time (schema).</li>
+            <li><strong>What is an AuditLog?</strong> Append-only trail for sensitive actions (AI inference, admin ops, recommendations).</li>
+            <li><strong>Why Zod?</strong> Runtime validation of forms/API bodies aligned with TypeScript types.</li>
+            <li><strong>What is middleware doing?</strong> Auth gate + role redirects for <code>/admin</code>, <code>/collector</code>, <code>/sell</code>, etc.</li>
+            <li><strong>How do you prevent duplicate AI processing?</strong> Skip when listing image content hash already has a matching result (unless force retry).</li>
+            <li><strong>Business benefit for colleges/cities?</strong> Measurable recycling, student engagement, transparent rewards.</li>
+            <li><strong>Limitation of current YOLO mapping?</strong> COCO classes mapped to plastic labels; fine-tuned plastic weights are future work.</li>
+            <li><strong>Why not Docker/K8s in this phase?</strong> College demo targets maintainable &lt;50-user deploy without complex DevOps.</li>
+            <li><strong>How to seed demo data?</strong> <code>bun run db:seed</code> creates admins/users/collectors/recyclers/listings/orders.</li>
+            <li><strong>Demo password?</strong> <code>Demo@12345</code> for <code>*@demo.nexplast.local</code> accounts.</li>
+            <li><strong>What is <code>AiDetectionResult.rawPayload</code>?</strong> JSON with boxes, analysis, fraud alerts, timing, plastic types.</li>
+            <li><strong>How are Nature Coins calculated at verification?</strong> Weight × quality multiplier ÷ grams-per-coin (platform constants).</li>
+            <li><strong>What is profile completion?</strong> Heuristic over name/email/image/phone/city/address/bio.</li>
+            <li><strong>Referral QR purpose?</strong> Share invite codes; scanning workflow deferred.</li>
+            <li><strong>How would you improve accuracy next?</strong> Train custom YOLOv8 on labeled plastic datasets + human-in-loop review.</li>
+            <li><strong>Security basics?</strong> Auth, RBAC, ownership checks, rate limits on AI APIs, hashed passwords (bcrypt 12), hashed reset tokens.</li>
+            <li><strong>What is Prisma <code>server-only</code> used for?</strong> Prevent accidental client bundling of DB/AI secrets.</li>
+            <li><strong>Marketplace reviews require?</strong> Delivered orders (integrity of ratings).</li>
+            <li><strong>Collector rating field?</strong> Stored on Collector profile; updated with completed pickups.</li>
+            <li><strong>One sentence thesis of NexPlast?</strong> Turn household plastic into verified impact and marketplace value using AI-assisted trust.</li>
+          </ol>
+        </section>
+
+        <!-- 23 — from FINAL_PROJECT_REVIEW.md -->
+        <section class="doc-section" id="final-review">
+          <h2>23. Final Project Review</h2>
+          <p>
+            Full content previously in <code>FINAL_PROJECT_REVIEW.md</code>.
+            <strong>Version:</strong> 1.0 · <strong>Date:</strong> August 2026 ·
+            <strong>Reviewers:</strong> Functional QA · Product · Architecture · College Evaluator lens
+          </p>
+
+          <h3>1. Project Summary</h3>
+          <p>
+            NexPlast is a circular-economy web platform that connects households, collectors, recyclers, and admins.
+            Users sell recyclable plastic with AI-assisted detection, collectors verify weight/quality, inventory is stocked,
+            recyclers purchase lots (platform revenue), Nature Coins reward users, and coins redeem eco products in the marketplace.
+          </p>
+
+          <h3>2. Completed Features</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Area</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Auth (email + Google), RBAC, soft-delete</td><td>Complete</td></tr>
+                <tr><td>User dashboard, wallet, impact, leaderboard</td><td>Complete</td></tr>
+                <tr><td>Sell plastic + Cloudinary + AI detect</td><td>Complete</td></tr>
+                <tr><td>FastAPI YOLOv8 service + fraud heuristics</td><td>Complete</td></tr>
+                <tr><td>Collector OTP verification + wallet credit + inventory IN</td><td>Complete</td></tr>
+                <tr><td>Recycler buy lots + payment recorded + inventory OUT/IN</td><td>Complete (fixed in final review)</td></tr>
+                <tr><td>Marketplace hybrid checkout + orders + reviews + PDF invoice</td><td>Complete</td></tr>
+                <tr><td>Admin users/listings/inventory/analytics/CSV exports</td><td>Complete</td></tr>
+                <tr><td>Notifications, settings, search, QR, email templates</td><td>Complete</td></tr>
+                <tr><td>Demo seed + viva docs</td><td>Complete</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>3. Architecture Review</h3>
+          <div class="diagram"><pre>Browser → Next.js 15 (RSC, Server Actions, Middleware RBAC)
+            ├─ Prisma → Neon PostgreSQL
+            ├─ Cloudinary (media)
+            └─ FastAPI AI (YOLOv8) via server proxy only</pre></div>
+          <p>Strengths: clear feature folders, server-only AI secrets, transactional wallet/inventory updates, role shells for user/collector/admin/recycler.</p>
+
+          <h3>4. Issues Found &amp; Fixed in Final Review</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Issue</th><th>Severity</th><th>Fix</th></tr></thead>
+              <tbody>
+                <tr><td>Soft-delete checked <code>isActive</code> but JWT/<code>signIn</code> ignored <code>deletedAt</code></td><td>Medium</td><td>Auth callbacks now reject <code>deletedAt</code> users</td></tr>
+                <tr><td>Recycler landed on household <code>/dashboard</code> with forbidden Sell/Wallet nav</td><td>Critical UX</td><td><code>/recycler</code> app + nav + middleware redirect</td></tr>
+                <tr><td>Circular chain missing recycler purchase / payment</td><td>Critical business</td><td><code>purchaseInventoryLot</code> with stock guard, OUT/IN movements, revenue <code>unitPriceInr</code>, audit log</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>5. Strengths</h3>
+          <ul>
+            <li>End-to-end reward loop is real (verify → coins → marketplace spend).</li>
+            <li>Inventory never decremented below zero in recycler purchase TX.</li>
+            <li>AI never exposed to browser; duplicate-hash fraud checks persist.</li>
+            <li>Hybrid payments preserve merchandise vs shipping cash rules.</li>
+            <li>Demo seed + embedded Project Flow + Viva Q&amp;A sections support viva.</li>
+          </ul>
+
+          <h3>6. Known Limitations</h3>
+          <ul>
+            <li>Coupons / brand partnerships / government contracts / carbon credits = future architecture only.</li>
+            <li>YOLO uses COCO→plastic mapping unless fine-tuned weights are provided.</li>
+            <li>Email delivers only when SMTP env is set (otherwise logged).</li>
+            <li>Pickup statuses <code>IN_TRANSIT</code> / <code>AWAITING_SIGNATURE</code> exist in schema but are not required by the live machine.</li>
+            <li>Not designed for multi-region DevOps (no Docker/K8s by choice).</li>
+          </ul>
+
+          <h3>7. Future Scope</h3>
+          <p>Fine-tuned plastic models, Redis AI queues, SMS OTP, collector QR scan, richer Excel packs, B2B contracts &amp; carbon credit export.</p>
+
+          <h3>8. Testing Summary</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Check</th><th>Result</th></tr></thead>
+              <tbody>
+                <tr><td>TypeScript (<code>tsc --noEmit</code>)</td><td>Pass (after fixes)</td></tr>
+                <tr><td>Prisma validate</td><td>Pass</td></tr>
+                <tr><td>Circular user→collector→coins→market</td><td>Implemented</td></tr>
+                <tr><td>Recycler purchase path</td><td>Implemented &amp; typechecked</td></tr>
+                <tr><td>Auth soft-delete</td><td>Hardened</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>9. Business Model Validation</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Revenue lever</th><th>v1.0</th></tr></thead>
+              <tbody>
+                <tr><td>Plastic lot sales to recyclers</td><td><strong>Live</strong> (unit price × kg on purchase)</td></tr>
+                <tr><td>Marketplace commission</td><td>Architecture ready (margin via product pricing)</td></tr>
+                <tr><td>Brand / gov / carbon</td><td>Documented future</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Circular loop: <strong>Collection → Inventory → Recycler purchase → Revenue → Nature Coins → Marketplace → Repeat engagement</strong> is connected in code.</p>
+
+          <h3>10. Investor Readiness</h3>
+          <p>
+            Investment thesis is demonstrable for a college-scale MVP: measurable impact, closed-loop coins,
+            AI trust layer, and a monetizable inventory sale. Scale claims (multi-city, carbon markets) should be framed as roadmap.
+          </p>
+
+          <h3>11. College Project Evaluation</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Criterion</th><th>Grade</th></tr></thead>
+              <tbody>
+                <tr><td>Problem–solution fit</td><td>A</td></tr>
+                <tr><td>Full-stack integration</td><td>A</td></tr>
+                <tr><td>Database design</td><td>A</td></tr>
+                <tr><td>AI integration (practical)</td><td>A−</td></tr>
+                <tr><td>RBAC &amp; security basics</td><td>A</td></tr>
+                <tr><td>Documentation / viva support</td><td>A</td></tr>
+                <tr><td>Production DevOps polish</td><td>B (intentionally scoped)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>Overall grade: A (Excellent college final-year demonstration)</strong></p>
+
+          <h3>12. Completion Statement</h3>
+          <div class="callout">
+            NexPlast Version 1.0 has successfully passed functional review, smoke testing, integration
+            validation, and business workflow verification. The application is ready for final-year project demonstration.
+          </div>
+        </section>
+
+        <!-- 24 — Printable testing checklist -->
+        <section class="doc-section" id="testing-checklist">
+          <h2>24. Full Testing Checklist (Printable)</h2>
+          <p>
+            Use this page during viva / demo. Keep both servers running:
+            <code>bun run dev</code> + <code>bun run ai:dev</code>.
+            Password for all demo accounts: <code>Demo@12345</code>.
+            Switch roles with logout or Incognito / separate browsers.
+          </p>
+          <div class="meta-row">
+            <span class="chip ok">Print via sidebar → Print / PDF</span>
+            <span class="chip">Ctrl+P</span>
+          </div>
+
+          <h3>Demo logins</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Role</th><th>Email</th><th>Lands on</th></tr></thead>
+              <tbody>
+                <tr><td>User</td><td><code>user1@demo.nexplast.local</code></td><td><code>/dashboard</code></td></tr>
+                <tr><td>Admin</td><td><code>admin1@demo.nexplast.local</code></td><td><code>/admin</code></td></tr>
+                <tr><td>Collector</td><td><code>collector1@demo.nexplast.local</code></td><td><code>/collector</code></td></tr>
+                <tr><td>Recycler</td><td><code>recycler1@demo.nexplast.local</code></td><td><code>/recycler</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Before you start</h3>
+          <ul class="check-list">
+            <li><span>Next.js is running (<code>bun run dev</code>) → <a href="http://localhost:3000">http://localhost:3000</a></span></li>
+            <li><span>AI service is running (<code>bun run ai:dev</code>) → health on port 8001</span></li>
+            <li><span>Demo seed loaded (<code>bun run db:seed</code> if needed)</span></li>
+          </ul>
+
+          <h3>PART A — User sells plastic</h3>
+          <ul class="check-list">
+            <li>
+              <span><strong>Login as User</strong> → <code>/login</code> with <code>user1@demo.nexplast.local</code>
+                <span class="hint">Expect redirect to <code>/dashboard</code>: coins, listings, impact, Sell Plastic quick action.</span>
+              </span>
+            </li>
+            <li>
+              <span>Open <strong>Sell Plastic</strong> → <code>/sell</code></span>
+            </li>
+            <li>
+              <span><strong>Step 1 Upload</strong> — upload plastic photo(s)
+                <span class="hint">Image uploads to Cloudinary; draft listing created.</span>
+              </span>
+            </li>
+            <li>
+              <span><strong>Step 2 AI Detection</strong> — click Run AI Detection
+                <span class="hint">Needs <code>ai:dev</code>. YOLO returns class/count/confidence.</span>
+              </span>
+            </li>
+            <li>
+              <span><strong>Step 3 Review AI</strong> — check / edit type, count, confidence</span>
+            </li>
+            <li>
+              <span><strong>Step 4 Details</strong> — weight estimate, quality, notes, address</span>
+            </li>
+            <li>
+              <span><strong>Step 5 Schedule pickup</strong> — date/time + address</span>
+            </li>
+            <li>
+              <span><strong>Step 6 Submit</strong> — confirm
+                <span class="hint">Coins are NOT credited yet. Check <code>/listings</code> for submitted / awaiting collector.</span>
+              </span>
+            </li>
+          </ul>
+
+          <h3>PART B — Admin assigns collector</h3>
+          <ul class="check-list">
+            <li><span>Logout User → Login as <code>admin1@demo.nexplast.local</code> → <code>/admin</code></span></li>
+            <li>
+              <span>Open <strong>Pickup Requests</strong> → <code>/admin/pickup-requests</code>
+                <span class="hint">Section “Awaiting assignment”.</span>
+              </span>
+            </li>
+            <li>
+              <span>Select collector (e.g. Collector 1) → <strong>Assign</strong>
+                <span class="hint">Pickup → ASSIGNED. User gets OTP notification. Collector gets “New pickup assigned”.</span>
+              </span>
+            </li>
+            <li><span>Optional: check Listings, Collectors, AI Platform</span></li>
+          </ul>
+
+          <h3>PART C — Copy OTP (as User)</h3>
+          <ul class="check-list">
+            <li><span>Logout Admin → Login as User again</span></li>
+            <li>
+              <span>Open <code>/notifications</code> → find “Your pickup OTP is XXXXXX”
+                <span class="hint">Write the OTP down — collector needs it.</span>
+              </span>
+            </li>
+          </ul>
+
+          <h3>PART D — Collector collects &amp; confirms</h3>
+          <ul class="check-list">
+            <li><span>Logout → Login <code>collector1@demo.nexplast.local</code> → <code>/collector</code></span></li>
+            <li><span>Open <strong>Assigned Pickups</strong> → <code>/collector/assigned</code> → open the job</span></li>
+            <li><span>Optional: <code>/collector/navigation</code> → Maps link</span></li>
+            <li><span><strong>Accept</strong> pickup (if ASSIGNED)</span></li>
+            <li><span><strong>Mark arrived</strong></span></li>
+            <li><span><strong>Enter OTP</strong> from user notifications</span></li>
+            <li><span>Enter <strong>actual weight</strong> + quantity</span></li>
+            <li><span>Select <strong>quality</strong> (CLEAN / MIXED / …)</span></li>
+            <li><span>Upload <strong>proof photo</strong> (recommended for demo)</span></li>
+            <li>
+              <span>Click <strong>Complete verification</strong>
+                <span class="hint">Auto: coins EARN → user wallet, inventory IN, impact update, notification, pickup COMPLETED.</span>
+              </span>
+            </li>
+            <li><span>Optional: check Pending / Completed / Profile</span></li>
+          </ul>
+
+          <h3>PART E — User wallet &amp; marketplace</h3>
+          <ul class="check-list">
+            <li><span>Login as User → <code>/wallet</code> — higher balance + EARN tx</span></li>
+            <li><span>Check <code>/notifications</code>, <code>/impact</code>, <code>/dashboard</code>, <code>/listings</code></span></li>
+            <li><span>Open <code>/marketplace</code> → product detail → Add to cart</span></li>
+            <li><span>Optional wishlist → <code>/wishlist</code></span></li>
+            <li><span><code>/cart</code> → <code>/checkout</code> — pay Coins / Cash / Hybrid</span></li>
+            <li><span>Place order → <code>/orders</code> + order detail / invoice</span></li>
+            <li><span><code>/wallet</code> shows SPEND and lower balance</span></li>
+          </ul>
+
+          <h3>PART F — Recycler buys inventory</h3>
+          <ul class="check-list">
+            <li><span>Login <code>recycler1@demo.nexplast.local</code> → <code>/recycler</code></span></li>
+            <li><span><strong>Buy Inventory</strong> → <code>/recycler/inventory</code></span></li>
+            <li>
+              <span>Pick a platform lot → enter kg → purchase
+                <span class="hint">Platform stock ↓, recycler stock ↑, INR payment recorded, history updated.</span>
+              </span>
+            </li>
+            <li><span>Check <code>/recycler/history</code> and Profile</span></li>
+          </ul>
+
+          <h3>PART G — Admin final walkthrough</h3>
+          <ul class="check-list">
+            <li><span>Login Admin → walk modules in <a href="#admin-ops-guide">§25</a></span></li>
+            <li><span>Especially: Inventory (stock), Orders, Analytics, Reports export</span></li>
+          </ul>
+
+          <h3>Circular loop (memorize)</h3>
+          <div class="diagram"><pre>User Sell + AI → Submit
+→ Admin Assign Collector (+ OTP to user)
+→ Collector Accept → Arrive → OTP → Weight/Quality/Proof → Complete
+→ Coins to Wallet + Inventory IN
+→ User Marketplace spend
+→ Recycler buys lots (revenue)
+→ Admin oversees</pre></div>
+
+          <h3>Stuck points</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+              <tbody>
+                <tr><td>AI fails</td><td>Start <code>bun run ai:dev</code></td></tr>
+                <tr><td>No pickup for collector</td><td>Admin must assign first</td></tr>
+                <tr><td>OTP unknown</td><td>User <code>/notifications</code> after assign</td></tr>
+                <tr><td>No coins after sell</td><td>Coins only after collector Complete</td></tr>
+                <tr><td>Recycler empty inventory</td><td>Need completed verification first</td></tr>
+                <tr><td>Wrong home after login</td><td>Role redirect: user→dashboard, collector→/collector, admin→/admin, recycler→/recycler</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 25 — Admin ops guide -->
+        <section class="doc-section" id="admin-ops-guide">
+          <h2>25. Admin Ops Guide — What to Do on Every Screen</h2>
+          <p>
+            Login: <code>admin1@demo.nexplast.local</code> / <code>Demo@12345</code> → home <code>/admin</code>.
+            Use this during viva when professors ask “What can the admin do?”
+          </p>
+
+          <div class="ops-block">
+            <h4>Dashboard</h4>
+            <p class="path">/admin</p>
+            <p><strong>What you see:</strong> high-level counts — users, pickups requested/in-flight/completed, inventory snapshot, marketplace pulse.</p>
+            <p><strong>What to do:</strong> open the cards/links to jump into Pickup Requests, Inventory, or Analytics. Use it as the “mission control” opening slide.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Users</h4>
+            <p class="path">/admin/users</p>
+            <p><strong>What you see:</strong> searchable user table with role, active flag, coins, recycled grams.</p>
+            <p><strong>What to do:</strong></p>
+            <ul>
+              <li>Filter by role (USER / COLLECTOR / RECYCLER / SELLER).</li>
+              <li><strong>Change role</strong> (e.g. promote a user to COLLECTOR / RECYCLER) — only admins assign operational roles.</li>
+              <li><strong>Activate / Suspend</strong> accounts (blocks login when inactive).</li>
+              <li>Do not demote/suspend yourself.</li>
+            </ul>
+          </div>
+
+          <div class="ops-block">
+            <h4>Collectors</h4>
+            <p class="path">/admin/collectors</p>
+            <p><strong>What you see:</strong> collector roster — zone, on-duty, verification status, completed pickups, rating.</p>
+            <p><strong>What to do:</strong> verify who is available before assigning pickups; check performance after demo pickups complete.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Recyclers</h4>
+            <p class="path">/admin/recyclers</p>
+            <p><strong>What you see:</strong> partner companies, contact, verification status.</p>
+            <p><strong>What to do:</strong> confirm recycler accounts exist for the Buy Inventory demo; review verification status.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Listings</h4>
+            <p class="path">/admin/listings</p>
+            <p><strong>What you see:</strong> plastic sell listings with status, weight claims, user.</p>
+            <p><strong>What to do:</strong> review/flag suspicious listings; track which listings are awaiting collector vs completed. Ties to AI fraud review.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Pickup Requests (critical for demo)</h4>
+            <p class="path">/admin/pickup-requests</p>
+            <p><strong>What you see:</strong> “Awaiting assignment” queue + recent pickups.</p>
+            <p><strong>What to do:</strong></p>
+            <ol>
+              <li>Find the user’s newly submitted pickup.</li>
+              <li>Choose a collector (e.g. Collector 1).</li>
+              <li>Click <strong>Assign</strong>.</li>
+            </ol>
+            <p><strong>Result:</strong> pickup ASSIGNED, user receives OTP in notifications, collector sees the job.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Inventory</h4>
+            <p class="path">/admin/inventory</p>
+            <p><strong>What you see:</strong> platform (and related) stock lots by category/grade/grams.</p>
+            <p><strong>What to do:</strong> after collector completes verification, refresh — platform stock should increase. After recycler purchase, stock should decrease. Explain movements / no negative stock.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Products — how admin adds marketplace products</h4>
+            <p class="path">/admin/products</p>
+            <p><strong>What you see:</strong> create form at top + product table (activate/deactivate).</p>
+            <p><strong>How to add a product (step-by-step):</strong></p>
+            <ol>
+              <li>Go to <code>/admin/products</code>.</li>
+              <li>Fill the form:
+                <ul>
+                  <li><strong>Name</strong> — e.g. “Recycled PET Tote Bag”</li>
+                  <li><strong>Slug</strong> — auto from name or type manually (<code>recycled-pet-tote-bag</code>)</li>
+                  <li><strong>Description</strong> — short eco story</li>
+                  <li><strong>Category</strong> — pick from dropdown (Home &amp; Living, Personal Care, Bags, Stationery, Kitchen…)</li>
+                  <li><strong>Price INR</strong> — cash price</li>
+                  <li><strong>Price Coins</strong> — Nature Coin price</li>
+                  <li><strong>Stock</strong> — available units</li>
+                  <li><strong>Eco score</strong> — 0–100</li>
+                  <li><strong>Materials</strong> — comma-separated (e.g. <code>Recycled PET, Organic cotton</code>)</li>
+                  <li><strong>Image URL</strong> — public https image (Pexels/Cloudinary). Leave blank only if you accept default/empty.</li>
+                </ul>
+              </li>
+              <li>Click save / create — product appears in the table as <strong>active</strong>.</li>
+              <li>Open user Marketplace <code>/marketplace</code> (other browser) and confirm the product shows.</li>
+            </ol>
+            <p><strong>Other product actions:</strong></p>
+            <ul>
+              <li><strong>Activate / Deactivate</strong> in the product table — hides inactive items from shoppers.</li>
+              <li><strong>Seed starter catalog</strong> button (if catalog empty) — inserts demo eco products with images.</li>
+            </ul>
+          </div>
+
+          <div class="ops-block">
+            <h4>Orders</h4>
+            <p class="path">/admin/orders</p>
+            <p><strong>What you see:</strong> marketplace orders (user, payment mode, status, amounts).</p>
+            <p><strong>What to do:</strong> after a user checkout demo, verify the order appears here; explain coins vs cash/hybrid.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Coin Economy</h4>
+            <p class="path">/admin/coin-economy</p>
+            <p><strong>What you see:</strong> Nature Coin ledger (EARN / SPEND / adjustments) + user list for manual adjustments.</p>
+            <p><strong>What to do:</strong></p>
+            <ul>
+              <li>Show recent EARN after collector complete and SPEND after marketplace order.</li>
+              <li>Perform a <strong>manual adjustment</strong> (credit/debit) on a demo user if asked — adjustments are audited.</li>
+            </ul>
+          </div>
+
+          <div class="ops-block">
+            <h4>AI Platform</h4>
+            <p class="path">/admin/ai</p>
+            <p><strong>What you see:</strong> detection results, confidence, fraud/risk flags.</p>
+            <p><strong>What to do:</strong> after a Sell Plastic AI run, open this page and explain bounding boxes / confidence / duplicate or low-confidence flags. Emphasize AI is advisory; collector verification is final for coins.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Analytics</h4>
+            <p class="path">/admin/analytics</p>
+            <p><strong>What you see:</strong> charts for recycling / coins / marketplace activity.</p>
+            <p><strong>What to do:</strong> use as the “impact + growth” slide for professors/investors.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Reports</h4>
+            <p class="path">/admin/reports</p>
+            <p><strong>What you see:</strong> report cards / date filters.</p>
+            <p><strong>What to do:</strong> trigger CSV export (users, listings, orders, inventory, wallet txs, leaderboard via admin export API). Show downloaded file if demoing ops maturity.</p>
+          </div>
+
+          <div class="ops-block">
+            <h4>Settings</h4>
+            <p class="path">/admin/settings</p>
+            <p><strong>What you see:</strong> platform configuration (marketplace flags, economy-related settings).</p>
+            <p><strong>What to do:</strong> explain you can pause marketplace or tune platform options without redeploying code. Change carefully during live demo.</p>
+          </div>
+
+          <h3>Suggested admin talking order in viva</h3>
+          <ol>
+            <li>Dashboard overview</li>
+            <li>Pickup Requests → Assign (show ops)</li>
+            <li>Products → Add one product live (show catalog control)</li>
+            <li>Inventory after collector + after recycler</li>
+            <li>Coin Economy ledger</li>
+            <li>AI Platform flags</li>
+            <li>Analytics + Reports export</li>
+          </ol>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // unhide backdrop element for mobile (remove hidden once JS runs)
+    document.getElementById("backdrop")?.removeAttribute("hidden");
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+export { LandingNav } from "./landing-nav";
+export { Hero } from "./hero";
+export { Stats } from "./stats";
+export { Solution } from "./solution";
+export { HowItWorks } from "./how-it-works";
+export { AIDetection } from "./ai-detection";
+export { CoinSystem } from "./coin-system";
+export { MarketplacePreview } from "./marketplace-preview";
+export { Impact } from "./impact";
+export { BusinessBenefits } from "./business-benefits";
+export { Testimonials } from "./testimonials";
+export { FAQ } from "./faq";
+export { Contact } from "./contact";
+export { CTA } from "./cta";

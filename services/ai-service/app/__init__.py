@@ -1,0 +1,1 @@
+"""NexPlast AI service package."""

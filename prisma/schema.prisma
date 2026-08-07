@@ -1,0 +1,930 @@
+// NexPlast Prisma schema
+// Phase 2: Auth models | Phase 3: Circular-economy domain models
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  COLLECTOR
+  RECYCLER
+  SELLER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ListingStatus {
+  DRAFT
+  SUBMITTED
+  AI_PROCESSING
+  AI_REJECTED
+  PENDING_REVIEW
+  APPROVED
+  AWAITING_COLLECTOR
+  CANCELLED
+  COMPLETED
+}
+
+enum PickupStatus {
+  REQUESTED
+  ASSIGNED
+  SCHEDULED
+  IN_TRANSIT
+  IN_PROGRESS
+  AWAITING_VERIFICATION
+  AWAITING_SIGNATURE
+  COMPLETED
+  CANCELLED
+}
+
+enum AiDecision {
+  ACCEPT
+  REJECT
+  MANUAL_REVIEW
+}
+
+enum PlasticQuality {
+  CLEAN
+  MIXED
+  CONTAMINATED
+}
+
+enum PlasticResinType {
+  PET
+  HDPE
+  PP
+  LDPE
+  PVC
+  PS
+  OTHER
+}
+
+enum WalletTxType {
+  EARN
+  SPEND
+  BONUS
+  ADJUST
+  REFUND
+  PENDING_HOLD
+  PENDING_RELEASE
+}
+
+enum WalletTxStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum PaymentMode {
+  CASH
+  COINS
+  HYBRID
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum InventoryStatus {
+  IN_STOCK
+  RESERVED
+  SHIPPED
+  DEPLETED
+}
+
+enum InventoryMovementType {
+  IN
+  OUT
+  ADJUST
+  RESERVE
+  RELEASE
+}
+
+enum InventoryGrade {
+  A
+  B
+  C
+}
+
+enum InventoryOwnerType {
+  PLATFORM
+  RECYCLER
+}
+
+enum NotificationType {
+  REWARD
+  PICKUP
+  ORDER
+  SYSTEM
+  ACHIEVEMENT
+}
+
+enum GamificationLevel {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum LeaderboardPeriod {
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ProfileVerificationStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+// ─── Auth (Phase 2 — preserved) ──────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          UserRole  @default(USER)
+  isActive      Boolean   @default(true)
+  /// Soft-delete timestamp (Phase 10 account deactivation).
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  profile             UserProfile?
+  wallet              Wallet?
+  collector           Collector?
+  recycler            Recycler?
+  cart                Cart?
+  environmentalImpact EnvironmentalImpact?
+
+  plasticListings PlasticListing[]
+  orders          Order[]
+  reviews         Review[]
+  wishlistItems   Wishlist[]
+  userBadges      UserBadge[]
+  leaderboardRows Leaderboard[]
+  notifications   Notification[]
+  supportTickets  SupportTicket[]
+  adminLogs       AdminLog[]      @relation("AdminLogActor")
+  auditLogs       AuditLog[]      @relation("AuditLogActor")
+  productsSold    Product[]       @relation("ProductSeller")
+
+  @@index([role])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Profile & Wallet ────────────────────────────────────────────────────────
+
+model UserProfile {
+  id        String            @id @default(cuid())
+  userId    String            @unique
+  phone     String?
+  city      String?
+  address   String?           @db.Text
+  bio       String?           @db.Text
+  level     GamificationLevel @default(BRONZE)
+  /// Unique referral code for invite QR / sharing.
+  referralCode String?        @unique
+  /// Notification prefs, newsletter flags, etc.
+  preferences Json?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([level])
+  @@index([referralCode])
+  @@map("user_profiles")
+}
+
+model Wallet {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  availableBalance Decimal  @default(0) @db.Decimal(14, 4)
+  pendingBalance   Decimal  @default(0) @db.Decimal(14, 4)
+  earnedTotal      Decimal  @default(0) @db.Decimal(14, 4)
+  spentTotal       Decimal  @default(0) @db.Decimal(14, 4)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id            String         @id @default(cuid())
+  walletId      String
+  type          WalletTxType
+  status        WalletTxStatus @default(PENDING)
+  amount        Decimal        @db.Decimal(14, 4)
+  balanceAfter  Decimal?       @db.Decimal(14, 4)
+  title         String?
+  description   String?        @db.Text
+  /// Polymorphic reference (e.g. PickupRequest, Order)
+  referenceType String?
+  referenceId   String?
+  idempotencyKey String?       @unique
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Restrict)
+
+  @@index([walletId, createdAt])
+  @@index([status])
+  @@index([type])
+  @@index([referenceType, referenceId])
+  @@map("wallet_transactions")
+}
+
+// ─── Plastic listings & AI ───────────────────────────────────────────────────
+
+model PlasticCategory {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  description String?          @db.Text
+  resinType   PlasticResinType @default(OTHER)
+  isActive    Boolean          @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  listingItems ListingItem[]
+  listingImages ListingImage[]
+  inventory    Inventory[]
+
+  @@index([resinType])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("plastic_categories")
+}
+
+model PlasticListing {
+  id              String         @id @default(cuid())
+  userId          String
+  status          ListingStatus  @default(DRAFT)
+  quality         PlasticQuality @default(MIXED)
+  claimedWeightGrams Int?
+  actualWeightGrams  Int?
+  estimatedCoins  Decimal?       @db.Decimal(14, 4)
+  finalCoins      Decimal?       @db.Decimal(14, 4)
+  pickupAddress   String?        @db.Text
+  notes           String?        @db.Text
+  deletedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user              User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items             ListingItem[]
+  images            ListingImage[]
+  aiResults         AiDetectionResult[]
+  pickupRequest     PickupRequest?
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([deletedAt])
+  @@map("plastic_listings")
+}
+
+model ListingItem {
+  id                String   @id @default(cuid())
+  listingId         String
+  categoryId        String
+  claimedQuantity   Int      @default(0)
+  claimedWeightGrams Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  listing  PlasticListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  category PlasticCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([listingId, categoryId])
+  @@index([categoryId])
+  @@map("listing_items")
+}
+
+model ListingImage {
+  id          String   @id @default(cuid())
+  listingId   String
+  /// Optional until plastic details assign a category.
+  categoryId  String?
+  url         String
+  publicId    String?
+  /// SHA-256 of file bytes for duplicate-image fraud checks.
+  contentHash String?
+  width       Int?
+  height      Int?
+  bytes       Int?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  listing   PlasticListing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  category  PlasticCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  aiResults AiDetectionResult[]
+
+  @@index([listingId])
+  @@index([categoryId])
+  @@index([contentHash])
+  @@map("listing_images")
+}
+
+model AiDetectionResult {
+  id                  String     @id @default(cuid())
+  listingId           String
+  listingImageId      String?
+  detectedClass       String
+  detectedCount       Int        @default(0)
+  /// User-edited count after AI review (collector compares in Phase 6).
+  userConfirmedCount  Int?
+  userConfirmedClass  String?
+  confidence          Decimal    @db.Decimal(5, 4)
+  decision            AiDecision
+  matchedClaimed      Boolean?
+  /// Bounding boxes, analysis metrics, fraud flags.
+  rawPayload          Json?
+  createdAt           DateTime   @default(now())
+
+  listing      PlasticListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listingImage ListingImage?  @relation(fields: [listingImageId], references: [id], onDelete: SetNull)
+
+  @@index([listingId])
+  @@index([listingImageId])
+  @@index([decision])
+  @@map("ai_detection_results")
+}
+
+// ─── Collector & pickup ──────────────────────────────────────────────────────
+
+model Collector {
+  id                 String                    @id @default(cuid())
+  userId             String                    @unique
+  zone               String?
+  rating             Decimal                   @default(0) @db.Decimal(3, 2)
+  completedPickups   Int                       @default(0)
+  isOnDuty           Boolean                   @default(false)
+  verificationStatus ProfileVerificationStatus @default(PENDING)
+  notes              String?                   @db.Text
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pickupRequests PickupRequest[]
+
+  @@index([verificationStatus])
+  @@index([isOnDuty])
+  @@index([zone])
+  @@map("collectors")
+}
+
+model PickupRequest {
+  id              String       @id @default(cuid())
+  listingId       String       @unique
+  collectorId     String?
+  status          PickupStatus @default(REQUESTED)
+  scheduledAt     DateTime?
+  acceptedAt      DateTime?
+  completedAt     DateTime?
+  address         String       @db.Text
+  latitude        Decimal?     @db.Decimal(10, 7)
+  longitude       Decimal?     @db.Decimal(10, 7)
+  otpHash         String?
+  /// Failed OTP attempts; reset on assign / successful verify.
+  otpFailCount    Int          @default(0)
+  distanceKm      Decimal?     @db.Decimal(8, 2)
+  notes           String?      @db.Text
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  listing      PlasticListing         @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  collector    Collector?             @relation(fields: [collectorId], references: [id], onDelete: SetNull)
+  verification CollectorVerification?
+  inventoryMovements InventoryMovement[]
+
+  @@index([collectorId, status])
+  @@index([status, scheduledAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("pickup_requests")
+}
+
+model CollectorVerification {
+  id                  String         @id @default(cuid())
+  pickupRequestId     String         @unique
+  actualQuantity      Int?
+  actualWeightGrams   Int
+  /// Collector-confirmed quality; listing.quality keeps the user's original claim.
+  verifiedQuality     PlasticQuality @default(MIXED)
+  customerConfirmed   Boolean        @default(false)
+  proofImageUrl       String?
+  proofPublicId       String?
+  digitalSignatureRef String?
+  signatureUrl        String?
+  recalculatedCoins   Decimal        @db.Decimal(14, 4)
+  notes               String?        @db.Text
+  verifiedAt          DateTime       @default(now())
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  /// Restrict: settlement evidence must outlive accidental pickup deletes.
+  pickupRequest PickupRequest @relation(fields: [pickupRequestId], references: [id], onDelete: Restrict)
+
+  @@map("collector_verifications")
+}
+
+// ─── Recycler & inventory ────────────────────────────────────────────────────
+
+model Recycler {
+  id                 String                    @id @default(cuid())
+  userId             String                    @unique
+  companyName        String
+  address            String?                   @db.Text
+  contactPhone       String?
+  verificationStatus ProfileVerificationStatus @default(PENDING)
+  notes              String?                   @db.Text
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inventory Inventory[]
+
+  @@index([verificationStatus])
+  @@map("recyclers")
+}
+
+model Inventory {
+  id           String             @id @default(cuid())
+  ownerType    InventoryOwnerType @default(PLATFORM)
+  recyclerId   String?
+  /// Uniqueness key: "PLATFORM" or recyclerId (avoids PG NULL unique pitfall).
+  ownerKey     String
+  categoryId   String
+  grade        InventoryGrade     @default(B)
+  quantityGrams Int               @default(0)
+  status       InventoryStatus    @default(IN_STOCK)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  /// Restrict: inventory + movements are ledger history.
+  recycler  Recycler?           @relation(fields: [recyclerId], references: [id], onDelete: Restrict)
+  category  PlasticCategory     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  movements InventoryMovement[]
+
+  @@unique([ownerKey, categoryId, grade])
+  @@index([ownerType, status])
+  @@index([recyclerId])
+  @@index([categoryId, grade])
+  @@index([status])
+  @@map("inventory")
+}
+
+model InventoryMovement {
+  id              String                @id @default(cuid())
+  inventoryId     String
+  type            InventoryMovementType
+  quantityGrams   Int
+  unitPriceInr    Decimal?              @db.Decimal(12, 2)
+  pickupRequestId String?
+  notes           String?               @db.Text
+  metadata        Json?
+  createdAt       DateTime              @default(now())
+
+  inventory     Inventory      @relation(fields: [inventoryId], references: [id], onDelete: Restrict)
+  pickupRequest PickupRequest? @relation(fields: [pickupRequestId], references: [id], onDelete: SetNull)
+
+  @@index([inventoryId, createdAt])
+  @@index([type])
+  @@index([pickupRequestId])
+  @@map("inventory_movements")
+}
+
+// ─── Marketplace ─────────────────────────────────────────────────────────────
+
+model MarketplaceCategory {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?   @db.Text
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products Product[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("marketplace_categories")
+}
+
+model Product {
+  id             String    @id @default(cuid())
+  categoryId     String
+  sellerId       String?
+  name           String
+  slug           String    @unique
+  description    String?   @db.Text
+  priceInr       Decimal   @db.Decimal(12, 2)
+  priceCoins     Decimal   @db.Decimal(14, 4)
+  hybridCashInr  Decimal?  @db.Decimal(12, 2)
+  hybridCoins    Decimal?  @db.Decimal(14, 4)
+  stock          Int       @default(0)
+  ecoScore       Int?
+  materials      String[]  @default([])
+  isActive       Boolean   @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  category    MarketplaceCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  seller      User?               @relation("ProductSeller", fields: [sellerId], references: [id], onDelete: SetNull)
+  images      ProductImage[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+  wishlistItems Wishlist[]
+
+  @@index([categoryId])
+  @@index([sellerId])
+  @@index([isActive, deletedAt])
+  @@index([createdAt])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  publicId  String?
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id          String      @id @default(cuid())
+  cartId      String
+  productId   String
+  quantity    Int         @default(1)
+  paymentMode PaymentMode @default(HYBRID)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, productId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  status          OrderStatus @default(PENDING_PAYMENT)
+  paymentMode     PaymentMode
+  cashAmountInr   Decimal     @default(0) @db.Decimal(12, 2)
+  coinAmount      Decimal     @default(0) @db.Decimal(14, 4)
+  /// Snapshot: fullName, phone, addressLine1, city, pinCode
+  shippingAddress Json
+  notes           String?     @db.Text
+  placedAt        DateTime    @default(now())
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  productId       String?
+  productName     String
+  quantity        Int
+  unitPriceInr    Decimal  @db.Decimal(12, 2)
+  unitPriceCoins  Decimal  @db.Decimal(14, 4)
+  cashAmountInr   Decimal  @db.Decimal(12, 2)
+  coinAmount      Decimal  @db.Decimal(14, 4)
+  createdAt       DateTime @default(now())
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId, rating])
+  @@map("reviews")
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@map("wishlists")
+}
+
+// ─── Gamification & impact ───────────────────────────────────────────────────
+
+model Badge {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  icon        String?
+  /// Unlock rules evaluated in later phases
+  criteria    Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userBadges UserBadge[]
+
+  @@index([isActive])
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([badgeId])
+  @@map("user_badges")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  icon        String?
+  /// Threshold / rule definition for future evaluation
+  criteria    Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("achievements")
+}
+
+model Leaderboard {
+  id         String            @id @default(cuid())
+  userId     String
+  periodType LeaderboardPeriod
+  /// e.g. 2026-08 for MONTHLY, 2026-W32 for WEEKLY, ALL for ALL_TIME
+  periodKey  String
+  metric     String
+  score      Decimal           @db.Decimal(14, 4)
+  rank       Int
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([periodType, periodKey, metric, userId])
+  @@index([periodType, periodKey, metric, rank])
+  @@index([userId])
+  @@map("leaderboards")
+}
+
+model EnvironmentalImpact {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  plasticRecycledGrams   Int      @default(0)
+  co2SavedKg             Decimal  @default(0) @db.Decimal(14, 4)
+  treesSaved             Decimal  @default(0) @db.Decimal(14, 4)
+  oceanPlasticPreventedKg Decimal @default(0) @db.Decimal(14, 4)
+  waterSavedLiters       Decimal  @default(0) @db.Decimal(14, 4)
+  energySavedKwh         Decimal  @default(0) @db.Decimal(14, 4)
+  oilSavedLiters         Decimal  @default(0) @db.Decimal(14, 4)
+  rankCache              Int?
+  updatedAt              DateTime @updatedAt
+  createdAt              DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("environmental_impacts")
+}
+
+// ─── Notifications & future-ready ops ────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([type])
+  @@map("notifications")
+}
+
+model SupportTicket {
+  id        String                @id @default(cuid())
+  userId    String
+  subject   String
+  body      String                @db.Text
+  status    SupportTicketStatus   @default(OPEN)
+  priority  SupportTicketPriority @default(MEDIUM)
+  deletedAt DateTime?
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status])
+  @@index([status, priority])
+  @@index([deletedAt])
+  @@map("support_tickets")
+}
+
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AdminLogActor", fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([adminId, createdAt])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@map("admin_logs")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model AppSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  label     String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("app_settings")
+}

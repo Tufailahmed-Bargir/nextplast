@@ -1,0 +1,9 @@
+# Ignore Prettier in reference assets and build output
+node_modules
+.next
+out
+build
+bun.lock
+frontend desgin and pages
+prompt folder
+*.md
