@@ -62,14 +62,17 @@ export const reviewSchema = z.object({
 
 export const adminProductSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(2).max(160),
+  name: z.string().min(2, "Name must be at least 2 characters").max(160),
   slug: z
     .string()
-    .min(2)
+    .min(2, "Slug must be at least 2 characters (e.g. eco-pen)")
     .max(180)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Invalid slug"),
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Slug must be lowercase letters, numbers, and hyphens only",
+    ),
   description: z.string().max(5000).optional(),
-  categoryId: z.string().min(1),
+  categoryId: z.string().min(1, "Category is required"),
   priceInr: z.number().positive().max(1_000_000),
   priceCoins: z.number().positive().max(1_000_000),
   hybridCashInr: z.number().min(0).max(1_000_000).optional(),
@@ -77,7 +80,7 @@ export const adminProductSchema = z.object({
   stock: z.number().int().min(0).max(1_000_000),
   ecoScore: z.number().int().min(0).max(100).optional(),
   materials: z.array(z.string().max(80)).max(20).optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url("Image must be a valid URL").optional(),
   isActive: z.boolean().optional().default(true),
 });
 

@@ -46,9 +46,16 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
   function save() {
     startTransition(async () => {
       const priceInr = Number(form.priceInr);
+      const autoSlug = slugify(form.name);
+      const slug =
+        form.slug.trim().length >= 2 ? slugify(form.slug) : autoSlug;
+      if (slug.length < 2) {
+        toast.error("Name/slug must be at least 2 characters (e.g. eco-pen).");
+        return;
+      }
       const result = await upsertAdminProductAction({
         name: form.name,
-        slug: form.slug || slugify(form.name),
+        slug,
         description: form.description || undefined,
         categoryId: form.categoryId,
         priceInr,
@@ -67,6 +74,15 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
         return;
       }
       toast.success(result.message);
+      setForm((f) => ({
+        ...f,
+        name: "",
+        slug: "",
+        description: "",
+        imageUrl: "",
+        priceInr: "499",
+        stock: "20",
+      }));
       router.refresh();
     });
   }
@@ -96,11 +112,16 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
               value={form.name}
               onChange={(e) => {
                 const name = e.target.value;
-                setForm((f) => ({
-                  ...f,
-                  name,
-                  slug: f.slug || slugify(name),
-                }));
+                setForm((f) => {
+                  const prevAuto = slugify(f.name);
+                  const keepManual =
+                    f.slug.length > 0 && f.slug !== prevAuto;
+                  return {
+                    ...f,
+                    name,
+                    slug: keepManual ? f.slug : slugify(name),
+                  };
+                });
               }}
             />
           </div>
@@ -108,8 +129,14 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
             <Label>Slug</Label>
             <Input
               value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, slug: slugify(e.target.value) })
+              }
+              placeholder="eco-pen"
             />
+            <p className="text-xs text-muted-foreground">
+              URL id — auto from name. Min 2 chars (e.g. eco-pen).
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label>Category</Label>
