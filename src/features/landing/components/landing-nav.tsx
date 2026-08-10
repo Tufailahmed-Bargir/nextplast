@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
-import { Menu, X, Moon, Sun } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/shared/brand";
+import { ThemeToggleButton } from "@/components/shared/theme-toggle-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,6 @@ const links = [
 ] as const;
 
 export function LandingNav() {
-  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
 
   return (
@@ -40,18 +39,7 @@ export function LandingNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </Button>
+          <ThemeToggleButton />
           <Link
             href="/login"
             className={cn(

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Bell, Menu, Moon, Search, ShoppingCart, Sun } from "lucide-react";
+import { Bell, Menu, Search, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggleButton } from "@/components/shared/theme-toggle-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
@@ -43,7 +43,6 @@ export function AppNavbar({
 }: AppNavbarProps) {
   const pathname = usePathname();
   const { setMobileOpen } = useSidebarStore();
-  const { theme, setTheme } = useTheme();
 
   const pageTitle =
     TITLE_BY_PATH[pathname] ??
@@ -91,18 +90,7 @@ export function AppNavbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label="Toggle theme"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </Button>
+        <ThemeToggleButton />
         <Link
           href="/notifications"
           aria-label="Notifications"
