@@ -10,6 +10,7 @@ import {
 } from "@/validations/collector";
 import { uploadProofAction } from "@/features/collector/actions/collector-actions";
 import { cn } from "@/lib/utils";
+import { compressImage } from "@/utils/compress-image";
 
 interface ProofUploaderProps {
   pickupId: string;
@@ -49,10 +50,12 @@ export function ProofUploader({
 
     startTransition(async () => {
       try {
+        setProgress("Compressing…");
+        const compressed = await compressImage(file);
         setProgress("Uploading proof…");
         const formData = new FormData();
         formData.set("pickupId", pickupId);
-        formData.set("file", file);
+        formData.set("file", compressed);
         const result = await uploadProofAction(formData);
         if (!result.success) {
           toast.error(result.error);
