@@ -53,6 +53,7 @@
           <li><a href="#final-review"><span class="num">23</span> Final Project Review</a></li>
           <li><a href="#testing-checklist"><span class="num">24</span> Testing Checklist</a></li>
           <li><a href="#admin-ops-guide"><span class="num">25</span> Admin Ops Guide</a></li>
+          <li><a href="#all-code-explanation"><span class="num">26</span> All Code Explanation</a></li>
         </ul>
       </nav>
 
@@ -432,7 +433,7 @@ GET /health · GET /version</pre></div>
 ├── scripts/                 seed-demo, promote-admin
 └── documentation/docs/      This handbook (index.html)
                              — includes Project Flow, Viva Q&amp;A, Final Review</pre>
-          <p>Find authentication under <code>src/auth.ts</code> + <code>src/features/auth</code>; marketplace under <code>src/features/marketplace</code> and <code>(marketplace)</code> routes; AI under <code>src/features/ai</code> + <code>services/ai-service</code>.</p>
+          <p>Find authentication under <code>src/auth.ts</code> + <code>src/features/auth</code>; marketplace under <code>src/features/marketplace</code> and <code>(marketplace)</code> routes; AI under <code>src/features/ai</code> + <code>services/ai-service</code>. Full page-by-page file map with line numbers: <a href="#all-code-explanation">§26 All Code Explanation</a>.</p>
         </section>
 
         <!-- 13 -->
@@ -1273,6 +1274,438 @@ Engagement (Coins/Market)--+--Monetization (Recycler sales)
             <li>AI Platform flags</li>
             <li>Analytics + Reports export</li>
           </ol>
+        </section>
+
+        <!-- 26 — All code explanation (viva file map) -->
+        <section class="doc-section" id="all-code-explanation">
+          <h2>26. All Code Explanation — Where Every Page Lives</h2>
+          <p>
+            Use this when your mentor or professor asks <em>“Show me the login page code”</em>,
+            <em>“Where is wallet?”</em>, or <em>“Where is the design?”</em>.
+            Open the file path in VS Code, go to the line numbers, and explain in simple words.
+          </p>
+
+          <div class="callout">
+            <strong>Two folders — don’t mix them up:</strong><br />
+            <strong>Live running app</strong> → <code>src/app/</code> (pages) + <code>src/features/</code> (logic &amp; UI components).<br />
+            <strong>Design mockups only</strong> → <code>frontend desgin and pages/</code> (React/Vite prototype — reference for UI ideas, not what runs on <code>localhost:3000</code>).
+          </div>
+
+          <h3>Quick cheat sheet (professor asks → open this)</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Professor asks…</th><th>Open this file first</th><th>Lines</th></tr></thead>
+              <tbody>
+                <tr><td>Login page</td><td><code>src/app/(auth)/login/page.tsx</code></td><td>1–13</td></tr>
+                <tr><td>Login form UI + Google button</td><td><code>src/features/auth/components/login-form.tsx</code></td><td>18–195</td></tr>
+                <tr><td>Login server logic</td><td><code>src/features/auth/actions/auth-actions.ts</code></td><td>99–133</td></tr>
+                <tr><td>Auth config (JWT, Google, password)</td><td><code>src/auth.ts</code></td><td>1–184</td></tr>
+                <tr><td>Who can open which URL</td><td><code>src/middleware.ts</code></td><td>1–174</td></tr>
+                <tr><td>Landing / home design</td><td><code>src/features/landing/landing-page.tsx</code></td><td>1–45</td></tr>
+                <tr><td>Hero section design</td><td><code>src/features/landing/components/hero.tsx</code></td><td>1–176</td></tr>
+                <tr><td>User dashboard</td><td><code>src/app/(dashboard)/dashboard/page.tsx</code></td><td>1–34</td></tr>
+                <tr><td>Dashboard cards &amp; data</td><td><code>src/features/dashboard/components/dashboard-home.tsx</code></td><td>1–129</td></tr>
+                <tr><td>Wallet page</td><td><code>src/app/(dashboard)/wallet/page.tsx</code></td><td>1–85</td></tr>
+                <tr><td>Wallet balance card</td><td><code>src/features/dashboard/components/wallet-card.tsx</code></td><td>1–64</td></tr>
+                <tr><td>Coin credit after pickup</td><td><code>src/features/collector/services/wallet-credit.ts</code></td><td>1–77</td></tr>
+                <tr><td>Sell plastic page</td><td><code>src/app/(dashboard)/sell/page.tsx</code></td><td>1–24</td></tr>
+                <tr><td>Sell wizard (6 steps)</td><td><code>src/features/plastic/components/sell-wizard.tsx</code></td><td>42–473</td></tr>
+                <tr><td>Marketplace shop</td><td><code>src/app/(marketplace)/marketplace/page.tsx</code></td><td>1–182</td></tr>
+                <tr><td>Checkout &amp; pay with coins</td><td><code>src/features/marketplace/components/checkout-client.tsx</code></td><td>1–397</td></tr>
+                <tr><td>Collector verify pickup</td><td><code>src/features/collector/components/pickup-workflow-panel.tsx</code></td><td>1–207</td></tr>
+                <tr><td>Admin assign collector</td><td><code>src/app/(admin)/admin/pickup-requests/page.tsx</code></td><td>1–126</td></tr>
+                <tr><td>AI detection API</td><td><code>src/app/api/ai/detect/route.ts</code></td><td>1–204</td></tr>
+                <tr><td>Database schema</td><td><code>prisma/schema.prisma</code></td><td>all models</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>A. Authentication pages</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file</th><th>Main component / logic</th><th>Show professor</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>/login</code></td>
+                  <td>Email + password login, Google OAuth button</td>
+                  <td><code>src/app/(auth)/login/page.tsx</code> (13 lines)</td>
+                  <td><code>src/features/auth/components/login-form.tsx</code> (179 lines)</td>
+                  <td>Form UI: lines 18–158 · Google: 160–184 · Export: 186–195</td>
+                </tr>
+                <tr>
+                  <td><code>/register</code></td>
+                  <td>New user signup, creates wallet</td>
+                  <td><code>src/app/(auth)/register/page.tsx</code> (13 lines)</td>
+                  <td><code>src/features/auth/components/register-form.tsx</code> (163 lines)</td>
+                  <td>Register action: <code>auth-actions.ts</code> lines 48–90</td>
+                </tr>
+                <tr>
+                  <td><code>/forgot-password</code></td>
+                  <td>Send reset email / token</td>
+                  <td><code>src/app/(auth)/forgot-password/page.tsx</code> (10 lines)</td>
+                  <td><code>src/features/auth/components/forgot-password-form.tsx</code> (85 lines)</td>
+                  <td>Token create: <code>user-service.ts</code></td>
+                </tr>
+                <tr>
+                  <td><code>/reset-password</code></td>
+                  <td>Set new password with token</td>
+                  <td><code>src/app/(auth)/reset-password/page.tsx</code> (10 lines)</td>
+                  <td><code>src/features/auth/components/reset-password-form.tsx</code> (147 lines)</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><code>/auth/continue</code></td>
+                  <td>After login → redirect to role home</td>
+                  <td><code>src/app/auth/continue/page.tsx</code> (16 lines)</td>
+                  <td><code>src/utils/roles.ts</code> — role → home path</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><em>(all auth)</em></td>
+                  <td>Auth.js config, JWT session, providers</td>
+                  <td><code>src/app/api/auth/[...nextauth]/route.ts</code> (6 lines)</td>
+                  <td><code>src/auth.ts</code> (172 lines)</td>
+                  <td>Providers: 26–60 · JWT callbacks: 60–120</td>
+                </tr>
+                <tr>
+                  <td><em>(route guard)</em></td>
+                  <td>Blocks wrong roles from pages</td>
+                  <td>—</td>
+                  <td><code>src/middleware.ts</code> (146 lines)</td>
+                  <td>Public routes: 13–30 · Role checks: 60–140</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>B. Landing page &amp; public design</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file</th><th>Design components</th><th>Show professor</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>/</code></td>
+                  <td>Public marketing home page</td>
+                  <td><code>src/app/page.tsx</code> (8 lines)</td>
+                  <td><code>src/features/landing/landing-page.tsx</code> (43 lines)</td>
+                  <td>Composes all sections: lines 22–40</td>
+                </tr>
+                <tr>
+                  <td><em>Hero</em></td>
+                  <td>Big headline + CTA buttons</td>
+                  <td>—</td>
+                  <td><code>src/features/landing/components/hero.tsx</code> (176 lines)</td>
+                  <td>Main banner design</td>
+                </tr>
+                <tr>
+                  <td><em>How it works</em></td>
+                  <td>Step-by-step circular flow</td>
+                  <td>—</td>
+                  <td><code>src/features/landing/components/how-it-works.tsx</code> (116 lines)</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><em>AI section</em></td>
+                  <td>Explains YOLO detection on landing</td>
+                  <td>—</td>
+                  <td><code>src/features/landing/components/ai-detection.tsx</code> (130 lines)</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><em>Coin system</em></td>
+                  <td>Nature Coins explanation</td>
+                  <td>—</td>
+                  <td><code>src/features/landing/components/coin-system.tsx</code> (156 lines)</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><em>Marketplace preview</em></td>
+                  <td>Eco shop preview on landing</td>
+                  <td>—</td>
+                  <td><code>src/features/landing/components/marketplace-preview.tsx</code> (157 lines)</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><em>Navbar + footer</em></td>
+                  <td>Top nav and bottom links</td>
+                  <td>—</td>
+                  <td><code>landing-nav.tsx</code> (100) · <code>site-footer.tsx</code> (97)</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><em>Global CSS / theme</em></td>
+                  <td>Colors, fonts, Tailwind base</td>
+                  <td><code>src/app/globals.css</code></td>
+                  <td><code>src/config/design-tokens.ts</code></td>
+                  <td>Brand green theme tokens</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>C. User dashboard pages</h3>
+          <p>All under <code>src/app/(dashboard)/</code> — shared layout: <code>layout.tsx</code> + sidebar <code>src/components/layout/app-sidebar.tsx</code> (157 lines).</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file (lines)</th><th>Logic / UI component</th></tr></thead>
+              <tbody>
+                <tr><td><code>/dashboard</code></td><td>Home — coins, listings, impact summary</td><td><code>dashboard/page.tsx</code> (34)</td><td><code>dashboard-home.tsx</code> (129) · queries: <code>dashboard-queries.ts</code> (766)</td></tr>
+                <tr><td><code>/profile</code></td><td>Edit name, phone, address, avatar</td><td><code>profile/page.tsx</code> (157)</td><td>Profile forms in page + Prisma user update</td></tr>
+                <tr><td><code>/settings</code></td><td>App preferences, notifications</td><td><code>settings/page.tsx</code> (52)</td><td><code>settings-forms.tsx</code> (243) · <code>settings-actions.ts</code> (169)</td></tr>
+                <tr><td><code>/notifications</code></td><td>Pickup OTP, coin alerts, orders</td><td><code>notifications/page.tsx</code> (51)</td><td><code>notification-list.tsx</code> (160) · <code>notification-actions.ts</code> (70)</td></tr>
+                <tr><td><code>/listings</code></td><td>My plastic sell listings + status</td><td><code>listings/page.tsx</code> (71)</td><td><code>listing-card.tsx</code> (85) · <code>listing-service.ts</code> (655)</td></tr>
+                <tr><td><code>/history</code></td><td>Past pickups &amp; activity timeline</td><td><code>history/page.tsx</code> (99)</td><td><code>activity-timeline.tsx</code> (95)</td></tr>
+                <tr><td><code>/impact</code></td><td>CO₂, trees, plastic recycled stats</td><td><code>impact/page.tsx</code> (156)</td><td><code>impact-card.tsx</code> (57)</td></tr>
+                <tr><td><code>/leaderboard</code></td><td>Rankings vs other users</td><td><code>leaderboard/page.tsx</code> (36)</td><td><code>leaderboard-preview.tsx</code> (79)</td></tr>
+                <tr><td><code>/search</code></td><td>Search products, own listings, orders</td><td><code>search/page.tsx</code> (130)</td><td><code>user-search.ts</code> (77)</td></tr>
+                <tr><td><code>/ai</code></td><td>User AI detection history</td><td><code>ai/page.tsx</code> (171)</td><td><code>detection-history.tsx</code> (56) · <code>ai-analytics.ts</code> (168)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>D. Sell plastic flow</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file</th><th>Main code</th><th>Step lines in wizard</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>/sell</code></td>
+                  <td>Start new sell — 6-step wizard</td>
+                  <td><code>src/app/(dashboard)/sell/page.tsx</code> (24 lines)</td>
+                  <td><code>src/features/plastic/components/sell-wizard.tsx</code> (444 lines)</td>
+                  <td>Steps defined: 42–49</td>
+                </tr>
+                <tr>
+                  <td><code>/sell/[listingId]</code></td>
+                  <td>Resume / edit existing draft listing</td>
+                  <td><code>sell/[listingId]/page.tsx</code> (144 lines)</td>
+                  <td>Same <code>SellWizard</code></td>
+                  <td>—</td>
+                </tr>
+                <tr><td>Step 1 Upload</td><td>Photo → Cloudinary</td><td>—</td><td><code>image-uploader.tsx</code> (173 lines)</td><td>Wizard line 332</td></tr>
+                <tr><td>Step 2 AI</td><td>Run YOLO detection</td><td>—</td><td><code>detection-summary.tsx</code> (194) · <code>ai-actions.ts</code> (132)</td><td>Wizard line 351</td></tr>
+                <tr><td>Step 3 Review</td><td>Edit AI counts / type</td><td>—</td><td>Inside <code>sell-wizard.tsx</code></td><td>Wizard line 367</td></tr>
+                <tr><td>Step 4 Details</td><td>Weight, quality, notes</td><td>—</td><td><code>plastic-details-form.tsx</code> (157 lines)</td><td>Wizard line 375</td></tr>
+                <tr><td>Step 5 Pickup</td><td>Schedule date &amp; address</td><td>—</td><td><code>pickup-scheduler.tsx</code> (107 lines)</td><td>Wizard line 388</td></tr>
+                <tr><td>Step 6 Submit</td><td>Final submit to collector queue</td><td>—</td><td><code>sell-actions.ts</code> (266 lines)</td><td>Wizard line 397</td></tr>
+                <tr><td><em>Listing DB</em></td><td>Create/update listings in Postgres</td><td>—</td><td><code>listing-service.ts</code> (655 lines)</td><td>Core CRUD logic</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>E. Wallet &amp; Nature Coins</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL / topic</th><th>What it does</th><th>Page / file</th><th>Key logic</th><th>Lines to show</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><code>/wallet</code></td>
+                  <td>Balance + EARN/SPEND transaction list</td>
+                  <td><code>src/app/(dashboard)/wallet/page.tsx</code> (85 lines)</td>
+                  <td><code>wallet-card.tsx</code> (64) · <code>dashboard-queries.ts</code> getWalletPageData</td>
+                  <td>Page UI: 21–85 · Balance card component</td>
+                </tr>
+                <tr>
+                  <td><em>Earn coins</em></td>
+                  <td>Credit user after collector verifies weight</td>
+                  <td>—</td>
+                  <td><code>src/features/collector/services/wallet-credit.ts</code> (77 lines)</td>
+                  <td>Full file — coin formula here</td>
+                </tr>
+                <tr>
+                  <td><em>Spend coins</em></td>
+                  <td>Deduct on marketplace checkout</td>
+                  <td>—</td>
+                  <td><code>src/features/marketplace/services/wallet-spend.ts</code> (77 lines)</td>
+                  <td>Transaction-safe spend</td>
+                </tr>
+                <tr>
+                  <td><em>Checkout</em></td>
+                  <td>Pay with coins / cash / hybrid</td>
+                  <td><code>checkout/page.tsx</code> (48 lines)</td>
+                  <td><code>checkout-client.tsx</code> (397) · <code>checkout.ts</code> (318)</td>
+                  <td>Payment split logic in checkout.ts</td>
+                </tr>
+                <tr>
+                  <td><code>/admin/coin-economy</code></td>
+                  <td>Admin views ledger + manual adjust</td>
+                  <td><code>admin/coin-economy/page.tsx</code> (46 lines)</td>
+                  <td><code>admin-wallet.ts</code> (143) · <code>wallet-table.tsx</code> (131)</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><em>DB models</em></td>
+                  <td>Wallet + WalletTransaction tables</td>
+                  <td><code>prisma/schema.prisma</code></td>
+                  <td>Search <code>model Wallet</code></td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>F. Marketplace pages</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file (lines)</th><th>Components / services</th></tr></thead>
+              <tbody>
+                <tr><td><code>/marketplace</code></td><td>Product catalog, filters, search</td><td><code>(marketplace)/marketplace/page.tsx</code> (182)</td><td><code>product-grid.tsx</code> (36) · <code>catalog.ts</code> (304)</td></tr>
+                <tr><td><code>/marketplace/[slug]</code></td><td>Single product detail, add to cart</td><td><code>marketplace/[slug]/page.tsx</code> (212)</td><td><code>product-gallery.tsx</code> (71) · <code>add-to-cart-button.tsx</code> (50)</td></tr>
+                <tr><td><code>/cart</code></td><td>Shopping cart items</td><td><code>cart/page.tsx</code> (26)</td><td><code>cart-client.tsx</code> (178) · <code>cart.ts</code> (146)</td></tr>
+                <tr><td><code>/wishlist</code></td><td>Saved products</td><td><code>wishlist/page.tsx</code> (26)</td><td><code>wishlist-client.tsx</code> (122) · <code>wishlist.ts</code> (86)</td></tr>
+                <tr><td><code>/checkout</code></td><td>Address + hybrid payment</td><td><code>checkout/page.tsx</code> (48)</td><td><code>checkout-client.tsx</code> (397) · <code>hybrid-price-selector.tsx</code> (192)</td></tr>
+                <tr><td><code>/orders</code></td><td>Order history list</td><td><code>orders/page.tsx</code> (65)</td><td><code>orders.ts</code> (139)</td></tr>
+                <tr><td><code>/orders/[id]</code></td><td>Order detail + invoice PDF</td><td><code>orders/[id]/page.tsx</code> (156)</td><td><code>invoice-button.tsx</code> (30) · <code>pdf-service.ts</code></td></tr>
+                <tr><td><code>/admin/products</code></td><td>Admin add/edit eco products</td><td><code>admin/products/page.tsx</code> (37)</td><td><code>admin-product-form.tsx</code> (230) · <code>admin-catalog.ts</code> (251)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>G. Collector pages</h3>
+          <p>All under <code>src/app/(collector)/</code> — layout: <code>collector/layout.tsx</code>.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file (lines)</th><th>Main component / service</th></tr></thead>
+              <tbody>
+                <tr><td><code>/collector</code></td><td>Collector home dashboard</td><td><code>collector/page.tsx</code> (236)</td><td><code>collector-dashboard-card.tsx</code> (56)</td></tr>
+                <tr><td><code>/collector/assigned</code></td><td>Pickups waiting for collector</td><td><code>assigned/page.tsx</code> (72)</td><td><code>pickup-card.tsx</code> (93)</td></tr>
+                <tr><td><code>/collector/pickups/[id]</code></td><td>OTP + weight + proof + complete</td><td><code>pickups/[pickupId]/page.tsx</code> (124)</td><td><code>pickup-workflow-panel.tsx</code> (207) · <code>pickup-workflow.ts</code> (470)</td></tr>
+                <tr><td><code>/collector/navigation</code></td><td>Google Maps link to user address</td><td><code>navigation/page.tsx</code> (104)</td><td><code>maps.ts</code> (25)</td></tr>
+                <tr><td><code>/collector/pending</code></td><td>In-progress pickups</td><td><code>pending/page.tsx</code> (60)</td><td><code>pickup-queries.ts</code> (201)</td></tr>
+                <tr><td><code>/collector/completed</code></td><td>Finished jobs history</td><td><code>completed/page.tsx</code> (63)</td><td>—</td></tr>
+                <tr><td><code>/collector/profile</code></td><td>Collector profile &amp; rating</td><td><code>profile/page.tsx</code> (69)</td><td><code>performance-card.tsx</code> (58)</td></tr>
+                <tr><td><em>OTP verify</em></td><td>User OTP input on pickup</td><td>—</td><td><code>otp-verification.tsx</code> (72) · <code>otp.ts</code> (35)</td></tr>
+                <tr><td><em>Inventory IN</em></td><td>Add verified plastic to platform stock</td><td>—</td><td><code>inventory-handoff.ts</code> (110)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>H. Admin pages</h3>
+          <p>All under <code>src/app/(admin)/admin/</code> — shared layout + admin sidebar.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file (lines)</th><th>Table / service file</th></tr></thead>
+              <tbody>
+                <tr><td><code>/admin</code></td><td>Stats overview cards</td><td><code>admin/page.tsx</code> (177)</td><td><code>admin-stats.ts</code> (148) · <code>admin-dashboard-card.tsx</code> (50)</td></tr>
+                <tr><td><code>/admin/users</code></td><td>Manage users, roles, suspend</td><td><code>users/page.tsx</code> (36)</td><td><code>user-table.tsx</code> (189) · <code>admin-users.ts</code> (125)</td></tr>
+                <tr><td><code>/admin/collectors</code></td><td>Collector roster</td><td><code>collectors/page.tsx</code> (41)</td><td><code>collector-table.tsx</code> (156)</td></tr>
+                <tr><td><code>/admin/recyclers</code></td><td>Recycler partners</td><td><code>recyclers/page.tsx</code> (39)</td><td><code>recycler-table.tsx</code> (88)</td></tr>
+                <tr><td><code>/admin/listings</code></td><td>Review plastic listings</td><td><code>listings/page.tsx</code> (32)</td><td><code>listing-table.tsx</code> (159) · <code>admin-listings.ts</code> (168)</td></tr>
+                <tr><td><code>/admin/pickup-requests</code></td><td>Assign collector to pickup</td><td><code>pickup-requests/page.tsx</code> (126)</td><td><code>assign-pickup-form.tsx</code> (76)</td></tr>
+                <tr><td><code>/admin/inventory</code></td><td>Platform plastic stock</td><td><code>inventory/page.tsx</code> (38)</td><td><code>inventory-table.tsx</code> (101) · <code>admin-inventory.ts</code> (80)</td></tr>
+                <tr><td><code>/admin/products</code></td><td>Add marketplace products</td><td><code>products/page.tsx</code> (37)</td><td><code>admin-product-form.tsx</code> (230)</td></tr>
+                <tr><td><code>/admin/orders</code></td><td>All marketplace orders</td><td><code>orders/page.tsx</code> (29)</td><td><code>order-table.tsx</code> (96)</td></tr>
+                <tr><td><code>/admin/coin-economy</code></td><td>Coin ledger + adjustments</td><td><code>coin-economy/page.tsx</code> (46)</td><td><code>wallet-table.tsx</code> (131)</td></tr>
+                <tr><td><code>/admin/ai</code></td><td>Review AI flags &amp; detections</td><td><code>ai/page.tsx</code> (182)</td><td><code>ai-review-panel.tsx</code> (155)</td></tr>
+                <tr><td><code>/admin/analytics</code></td><td>Charts &amp; graphs</td><td><code>analytics/page.tsx</code> (146)</td><td><code>admin-analytics.ts</code> (113) · Recharts</td></tr>
+                <tr><td><code>/admin/reports</code></td><td>CSV export reports</td><td><code>reports/page.tsx</code> (187)</td><td><code>admin-reports.ts</code> (132) · <code>api/admin/export/route.ts</code> (202)</td></tr>
+                <tr><td><code>/admin/settings</code></td><td>Platform config toggles</td><td><code>settings/page.tsx</code> (30)</td><td><code>settings-form.tsx</code> (195) · <code>admin-actions.ts</code> (255)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>I. Recycler pages</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>URL</th><th>What it does</th><th>Page file (lines)</th><th>Logic file</th></tr></thead>
+              <tbody>
+                <tr><td><code>/recycler</code></td><td>Recycler home</td><td><code>recycler/page.tsx</code> (111)</td><td>—</td></tr>
+                <tr><td><code>/recycler/inventory</code></td><td>Buy platform plastic lots (revenue)</td><td><code>inventory/page.tsx</code> (86)</td><td><code>purchase-lot-form.tsx</code> (68) · <code>purchase.ts</code> (166)</td></tr>
+                <tr><td><code>/recycler/history</code></td><td>Past purchases</td><td><code>history/page.tsx</code> (77)</td><td><code>recycler-actions.ts</code> (69)</td></tr>
+                <tr><td><code>/recycler/profile</code></td><td>Company profile</td><td><code>profile/page.tsx</code> (58)</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>J. AI &amp; API code</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>What</th><th>File</th><th>Lines</th><th>Simple explanation</th></tr></thead>
+              <tbody>
+                <tr><td>AI detect API (Next.js)</td><td><code>src/app/api/ai/detect/route.ts</code></td><td>1–204</td><td>Receives image URL, calls FastAPI, saves result</td></tr>
+                <tr><td>AI fraud check API</td><td><code>src/app/api/ai/fraud/route.ts</code></td><td>1–49</td><td>Duplicate hash + risk score</td></tr>
+                <tr><td>AI status / health</td><td><code>src/app/api/ai/status/route.ts</code></td><td>1–55</td><td>Is AI service online?</td></tr>
+                <tr><td>FastAPI YOLO service</td><td><code>services/ai-service/app/main.py</code></td><td>all</td><td>Python microservice entry</td></tr>
+                <tr><td>YOLO detection logic</td><td><code>services/ai-service/app/api/routes/detect.py</code></td><td>all</td><td>Runs model on image bytes</td></tr>
+                <tr><td>AI client (server)</td><td><code>src/features/ai/services/ai-client.ts</code></td><td>1–173</td><td>HTTP call to FastAPI with API key</td></tr>
+                <tr><td>Plastic detector</td><td><code>src/features/ai/services/plastic-detector.ts</code></td><td>1–213</td><td>Maps YOLO output to plastic types</td></tr>
+                <tr><td>Detection DB save</td><td><code>src/features/ai/services/detection-service.ts</code></td><td>1–113</td><td>Writes AiDetectionResult to Postgres</td></tr>
+                <tr><td>Invoice PDF API</td><td><code>src/app/api/pdf/invoice/route.ts</code></td><td>1–70</td><td>Generates order invoice PDF</td></tr>
+                <tr><td>Health check</td><td><code>src/app/api/health/route.ts</code></td><td>1–20</td><td>App alive check</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>K. Shared layout &amp; navigation</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>What</th><th>File</th><th>Lines</th></tr></thead>
+              <tbody>
+                <tr><td>Root app layout (html, fonts, providers)</td><td><code>src/app/layout.tsx</code></td><td>all</td></tr>
+                <tr><td>User dashboard shell (sidebar + navbar)</td><td><code>src/components/layout/dashboard-shell.tsx</code></td><td>1–38</td></tr>
+                <tr><td>Left sidebar menu links</td><td><code>src/components/layout/app-sidebar.tsx</code></td><td>1–157</td></tr>
+                <tr><td>Top navbar (search, profile)</td><td><code>src/components/layout/app-navbar.tsx</code></td><td>1–108</td></tr>
+                <tr><td>Auth pages layout (centered card)</td><td><code>src/components/layout/auth-layout-shell.tsx</code></td><td>1–49</td></tr>
+                <tr><td>Nav link constants (all routes)</td><td><code>src/config/app.ts</code> or nav config</td><td>—</td></tr>
+                <tr><td>Role permissions map</td><td><code>src/features/auth/services/permissions.ts</code></td><td>1–41</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>L. Database &amp; core backend</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>What</th><th>File</th><th>When professor asks</th></tr></thead>
+              <tbody>
+                <tr><td>All DB tables &amp; relations</td><td><code>prisma/schema.prisma</code></td><td>“Show database design”</td></tr>
+                <tr><td>Prisma client singleton</td><td><code>src/prisma/index.ts</code></td><td>“How app talks to DB”</td></tr>
+                <tr><td>Demo seed data</td><td><code>scripts/seed-demo.ts</code></td><td>“Where demo users come from”</td></tr>
+                <tr><td>Promote user to admin</td><td><code>scripts/promote-admin.ts</code></td><td>—</td></tr>
+                <tr><td>Platform constants (coins/kg)</td><td><code>src/constants/platform.ts</code></td><td>“How coins calculated”</td></tr>
+                <tr><td>Form validation schemas</td><td><code>src/validations/</code> folder</td><td>“Where login validated” → <code>validations/auth.ts</code></td></tr>
+                <tr><td>Email service</td><td><code>src/services/email/</code></td><td>Password reset emails</td></tr>
+                <tr><td>Cloudinary upload</td><td><code>src/services/storage/cloudinary.ts</code></td><td>“Where images stored”</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>M. Design mockup folder (reference only)</h3>
+          <p>
+            Folder: <code>frontend desgin and pages/</code> — separate Vite + React prototype.
+            Use this to show <strong>original UI design ideas</strong>. The live app reimplemented these in Next.js under <code>src/features/</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Mockup page</th><th>Design file</th><th>Lines</th><th>Live app equivalent</th></tr></thead>
+              <tbody>
+                <tr><td>Landing design</td><td><code>frontend desgin and pages/src/pages/LandingPage.tsx</code></td><td>43</td><td><code>src/features/landing/landing-page.tsx</code></td></tr>
+                <tr><td>Login / Register design</td><td><code>.../pages/AuthPage.tsx</code></td><td>110</td><td><code>src/features/auth/components/login-form.tsx</code></td></tr>
+                <tr><td>Dashboard design</td><td><code>.../pages/DashboardPage.tsx</code></td><td>247</td><td><code>src/features/dashboard/components/dashboard-home.tsx</code></td></tr>
+                <tr><td>Wallet design</td><td><code>.../pages/WalletPage.tsx</code></td><td>109</td><td><code>src/app/(dashboard)/wallet/page.tsx</code></td></tr>
+                <tr><td>Sell plastic design</td><td><code>.../pages/SellPlasticPage.tsx</code></td><td>322</td><td><code>src/features/plastic/components/sell-wizard.tsx</code></td></tr>
+                <tr><td>Marketplace design</td><td><code>.../pages/MarketplacePage.tsx</code></td><td>134</td><td><code>src/app/(marketplace)/marketplace/page.tsx</code></td></tr>
+                <tr><td>Checkout design</td><td><code>.../pages/CheckoutPage.tsx</code></td><td>192</td><td><code>src/features/marketplace/components/checkout-client.tsx</code></td></tr>
+                <tr><td>Collector design</td><td><code>.../pages/CollectorPage.tsx</code></td><td>121</td><td><code>src/app/(collector)/collector/page.tsx</code></td></tr>
+                <tr><td>Admin design</td><td><code>.../pages/AdminPage.tsx</code></td><td>132</td><td><code>src/app/(admin)/admin/page.tsx</code></td></tr>
+                <tr><td>AI page design</td><td><code>.../pages/AIPage.tsx</code></td><td>198</td><td><code>src/app/(dashboard)/ai/page.tsx</code></td></tr>
+                <tr><td>Hero component</td><td><code>.../components/landing/Hero.tsx</code></td><td>—</td><td><code>src/features/landing/components/hero.tsx</code></td></tr>
+                <tr><td>Global theme / CSS</td><td><code>.../src/index.css</code> + <code>tailwind.config.js</code></td><td>—</td><td><code>src/app/globals.css</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>How to answer in viva (simple script)</h3>
+          <ol>
+            <li><strong>Say the URL</strong> — e.g. “Login is at <code>/login</code>.”</li>
+            <li><strong>Open the page file</strong> — e.g. <code>src/app/(auth)/login/page.tsx</code> — “This is the route; it loads the LoginForm component.”</li>
+            <li><strong>Open the component</strong> — e.g. <code>login-form.tsx</code> — “Lines 18–158 are the email/password UI; line 12 calls <code>loginAction</code> on submit.”</li>
+            <li><strong>Open the action/service</strong> — e.g. <code>auth-actions.ts</code> — “This runs on the server, checks password with bcrypt, creates JWT session.”</li>
+            <li><strong>Mention the database</strong> — e.g. “User data is in <code>prisma/schema.prisma</code> → <code>model User</code>.”</li>
+          </ol>
+
+          <div class="callout">
+            <strong>Tip:</strong> Press <kbd>Ctrl+K</kbd> in this doc and search “login”, “wallet”, “sell”, or “admin” to jump here fast during viva prep.
+          </div>
         </section>
       </main>
     </div>
