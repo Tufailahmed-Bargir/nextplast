@@ -94,6 +94,8 @@ export interface NotificationItem {
   body: string;
   readAt: Date | null;
   createdAt: Date;
+  /** Deep link from notification `data.href` when present. */
+  href?: string | null;
 }
 
 export interface LeaderboardEntry {

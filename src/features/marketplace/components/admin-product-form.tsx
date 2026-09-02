@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,18 +14,39 @@ import {
   upsertAdminProductAction,
 } from "@/features/marketplace/actions/marketplace-actions";
 import { inrToNatureCoins } from "@/utils/coin";
+import { cn } from "@/lib/utils";
+
+function slugify(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 interface AdminProductFormProps {
   categories: { id: string; name: string }[];
+  /** Prefill from an OPEN product request (`?requestId=`). */
+  requestPrefill?: {
+    id: string;
+    title: string;
+    description: string;
+    requesterName: string | null;
+    requesterEmail: string;
+    requesterRole: string;
+  } | null;
 }
 
-export function AdminProductForm({ categories }: AdminProductFormProps) {
+export function AdminProductForm({
+  categories,
+  requestPrefill = null,
+}: AdminProductFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState({
-    name: "",
-    slug: "",
-    description: "",
+    name: requestPrefill?.title ?? "",
+    slug: requestPrefill ? slugify(requestPrefill.title) : "",
+    description: requestPrefill?.description ?? "",
     categoryId: categories[0]?.id ?? "",
     priceInr: "499",
     stock: "20",
@@ -34,14 +56,6 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
   });
 
   const derivedCoins = inrToNatureCoins(Number(form.priceInr) || 0);
-
-  function slugify(name: string) {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-  }
 
   function save() {
     startTransition(async () => {
@@ -68,6 +82,7 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
           .filter(Boolean),
         imageUrl: form.imageUrl || undefined,
         isActive: true,
+        requestId: requestPrefill?.id,
       });
       if (!result.success) {
         toast.error(result.error);
@@ -83,6 +98,11 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
         priceInr: "499",
         stock: "20",
       }));
+      if (requestPrefill) {
+        router.push("/admin/product-requests");
+        router.refresh();
+        return;
+      }
       router.refresh();
     });
   }
@@ -103,9 +123,29 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Create product</CardTitle>
+          <CardTitle>
+            {requestPrefill ? "Fulfill product request" : "Create product"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
+          {requestPrefill ? (
+            <div className="sm:col-span-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
+              <p className="font-medium text-foreground">
+                Request from {requestPrefill.requesterName ?? "User"} (
+                {requestPrefill.requesterEmail})
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Role:{" "}
+                {requestPrefill.requesterRole.replaceAll("_", " ").toLowerCase()}
+              </p>
+              <Link
+                href="/admin/product-requests"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Back to requests
+              </Link>
+            </div>
+          ) : null}
           <div className="space-y-1.5 sm:col-span-2">
             <Label>Name</Label>
             <Input
@@ -215,7 +255,11 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
             onClick={save}
             className="sm:col-span-2"
           >
-            {pending ? "Saving…" : "Create product"}
+            {pending
+              ? "Saving…"
+              : requestPrefill
+                ? "Create & notify requester"
+                : "Create product"}
           </Button>
         </CardContent>
       </Card>
@@ -232,6 +276,14 @@ export function AdminProductForm({ categories }: AdminProductFormProps) {
           <Button type="button" variant="outline" disabled={pending} onClick={seed}>
             Seed starter catalog
           </Button>
+          {requestPrefill ? (
+            <Link
+              href="/admin/product-requests"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+            >
+              Cancel fulfill
+            </Link>
+          ) : null}
         </CardContent>
       </Card>
     </div>

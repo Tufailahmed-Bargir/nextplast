@@ -64,6 +64,7 @@ export const adminNavItems: NavItem[] = [
   { title: "Pickup Requests", href: "/admin/pickup-requests", icon: "ClipboardList" },
   { title: "Inventory", href: "/admin/inventory", icon: "Package" },
   { title: "Products", href: "/admin/products", icon: "Store" },
+  { title: "Product Requests", href: "/admin/product-requests", icon: "Bell" },
   { title: "Orders", href: "/admin/orders", icon: "ClipboardList" },
   { title: "Coin Economy", href: "/admin/coin-economy", icon: "Coins" },
   { title: "AI Platform", href: "/admin/ai", icon: "Cpu" },

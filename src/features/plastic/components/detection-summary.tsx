@@ -46,13 +46,22 @@ type EditMap = Record<string, { count: number; className: string }>;
 
 function buildEdits(detections: DetectionView[]): EditMap {
   return Object.fromEntries(
-    detections.map((d) => [
-      d.id,
-      {
-        count: d.userConfirmedCount ?? d.detectedCount,
-        className: d.userConfirmedClass ?? d.detectedClass,
-      },
-    ]),
+    detections.map((d) => {
+      const className = d.userConfirmedClass ?? d.detectedClass;
+      // Prefer counting green boxes of the shown class so qty matches the overlay.
+      const boxCount =
+        d.boxes?.filter((b) => b.label === className).length ?? 0;
+      const count =
+        d.userConfirmedCount ??
+        (boxCount > 0 ? boxCount : d.detectedCount);
+      return [
+        d.id,
+        {
+          count,
+          className,
+        },
+      ];
+    }),
   );
 }
 
@@ -149,7 +158,11 @@ export function DetectionSummary({
             {detection.imageUrl ? (
               <BoundingBoxViewer
                 imageUrl={detection.imageUrl}
-                boxes={detection.boxes ?? []}
+                boxes={(detection.boxes ?? []).filter(
+                  (b) =>
+                    b.label ===
+                    (edits[detection.id]?.className ?? detection.detectedClass),
+                )}
               />
             ) : null}
             <div className="space-y-3 p-4">

@@ -8,6 +8,7 @@ import {
   cartAddSchema,
   cartUpdateSchema,
   checkoutSchema,
+  createProductRequestSchema,
   reviewSchema,
   wishlistToggleSchema,
 } from "@/validations/marketplace";
@@ -22,6 +23,8 @@ import {
   seedStarterCatalogIfEmpty,
   upsertAdminProduct,
 } from "@/features/marketplace/services/admin-catalog";
+import { createProductRequest } from "@/features/marketplace/services/product-requests";
+import { fulfillProductRequest } from "@/features/admin/services/admin-product-requests";
 import { logger } from "@/utils/logger";
 
 export type MarketActionResult<T = unknown> =
@@ -47,6 +50,8 @@ function mapError(error: unknown): string {
     WALLET_NOT_FOUND: "Wallet not found. Earn coins by recycling first.",
     DUPLICATE_SPEND: "Payment already processed. Refresh and check orders.",
     INVALID_CHECKOUT: "Invalid checkout session. Please retry.",
+    PRODUCT_REQUEST_NOT_FOUND: "Product request not found.",
+    PRODUCT_REQUEST_NOT_OPEN: "This request is no longer open.",
   };
   return map[message] ?? "Something went wrong. Please try again.";
 }
@@ -59,8 +64,10 @@ function revalidateMarket() {
   revalidatePath("/orders");
   revalidatePath("/wallet");
   revalidatePath("/dashboard");
+  revalidatePath("/notifications");
   revalidatePath("/admin/products");
   revalidatePath("/admin/orders");
+  revalidatePath("/admin/product-requests");
 }
 
 export async function addToCartAction(
@@ -207,9 +214,37 @@ export async function submitReviewAction(
   }
 }
 
-export async function upsertAdminProductAction(
+export async function createProductRequestAction(
   raw: unknown,
 ): Promise<MarketActionResult<{ id: string }>> {
+  try {
+    const user = await requireAuth();
+    const parsed = createProductRequestSchema.safeParse(raw);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues[0]?.message ?? "Invalid request.",
+      };
+    }
+    const request = await createProductRequest({
+      userId: user.id,
+      title: parsed.data.title,
+      description: parsed.data.description,
+    });
+    revalidatePath("/admin/product-requests");
+    return {
+      success: true,
+      data: { id: request.id },
+      message: "Request sent. We’ll notify you when it’s listed.",
+    };
+  } catch (error) {
+    return { success: false, error: mapError(error) };
+  }
+}
+
+export async function upsertAdminProductAction(
+  raw: unknown,
+): Promise<MarketActionResult<{ id: string; slug: string }>> {
   try {
     const admin = await requireAdmin();
     const parsed = adminProductSchema.safeParse(raw);
@@ -219,15 +254,31 @@ export async function upsertAdminProductAction(
         error: parsed.error.issues[0]?.message ?? "Invalid product.",
       };
     }
+    const { requestId, ...productInput } = parsed.data;
     const product = await upsertAdminProduct({
       adminId: admin.id,
-      ...parsed.data,
+      ...productInput,
     });
+
+    if (requestId && !productInput.id) {
+      await fulfillProductRequest({
+        adminId: admin.id,
+        requestId,
+        productId: product.id,
+        productName: product.name,
+        productSlug: product.slug,
+      });
+    }
+
     revalidateMarket();
     return {
       success: true,
-      data: { id: product.id },
-      message: parsed.data.id ? "Product updated." : "Product created.",
+      data: { id: product.id, slug: product.slug },
+      message: productInput.id
+        ? "Product updated."
+        : requestId
+          ? "Product created and requester notified."
+          : "Product created.",
     };
   } catch (error) {
     return { success: false, error: mapError(error) };

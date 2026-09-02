@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ interface NotificationListProps {
 
 /**
  * Notification list — unread indicators, optional filters/actions.
+ * Rows with `href` navigate (e.g. product request listed → marketplace product).
  */
 export function NotificationList({
   notifications,
@@ -33,6 +35,8 @@ export function NotificationList({
   title = "Notifications",
   interactive = false,
 }: NotificationListProps) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
@@ -47,6 +51,18 @@ export function NotificationList({
     if (typeFilter !== "all" && n.type !== typeFilter) return false;
     return true;
   });
+
+  function openNotification(n: NotificationItem) {
+    if (!n.href) return;
+    startTransition(async () => {
+      if (!n.readAt) {
+        const fd = new FormData();
+        fd.set("id", n.id);
+        await markNotificationReadAction(fd);
+      }
+      router.push(n.href!);
+    });
+  }
 
   return (
     <Card>
@@ -107,6 +123,7 @@ export function NotificationList({
           <ul className="space-y-2">
             {filtered.map((n) => {
               const unread = !n.readAt;
+              const clickable = Boolean(n.href);
               return (
                 <li
                   key={n.id}
@@ -115,7 +132,22 @@ export function NotificationList({
                     unread
                       ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/40"
                       : "border-border/60",
+                    clickable && "cursor-pointer transition hover:border-emerald-400/60",
+                    pending && "opacity-80",
                   )}
+                  onClick={clickable ? () => openNotification(n) : undefined}
+                  onKeyDown={
+                    clickable
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openNotification(n);
+                          }
+                        }
+                      : undefined
+                  }
+                  role={clickable ? "link" : undefined}
+                  tabIndex={clickable ? 0 : undefined}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium text-foreground">{n.title}</p>
@@ -130,9 +162,13 @@ export function NotificationList({
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs text-muted-foreground">
                       {formatRelative(n.createdAt)} · {n.type.toLowerCase()}
+                      {n.href ? " · tap to open" : ""}
                     </p>
                     {interactive ? (
-                      <div className="flex gap-2">
+                      <div
+                        className="flex gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {unread ? (
                           <form action={markNotificationReadAction}>
                             <input type="hidden" name="id" value={n.id} />

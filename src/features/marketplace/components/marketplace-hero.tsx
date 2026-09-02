@@ -4,6 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { CoinIcon } from "@/components/shared/brand";
 import { cn } from "@/lib/utils";
 import { formatCoin } from "@/utils/coin";
+import { ProductRequestDialog } from "@/features/marketplace/components/product-request-dialog";
 
 interface MarketplaceHeroProps {
   coinBalance?: number;
@@ -20,10 +21,13 @@ export function MarketplaceHero({
       <div className="pointer-events-none absolute -bottom-16 left-10 h-48 w-48 rounded-full bg-emerald-300/20 blur-3xl" />
       <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
         <div className="space-y-4">
-          <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
-            <Recycle className="h-3.5 w-3.5" />
-            Circular economy marketplace
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+              <Recycle className="h-3.5 w-3.5" />
+              Circular economy marketplace
+            </p>
+            <ProductRequestDialog authenticated={authenticated} />
+          </div>
           <h1 className="font-display text-3xl font-bold sm:text-4xl">
             NexPlast Eco Marketplace
           </h1>
