@@ -14,6 +14,35 @@ from app.services.weight import estimate_weight_grams
 from app.utils.classes import dominant_class, refine_plastic_label
 
 
+def _iou(a: BoundingBox, b: BoundingBox) -> float:
+    ax2, ay2 = a.x + a.w, a.y + a.h
+    bx2, by2 = b.x + b.w, b.y + b.h
+    ix1, iy1 = max(a.x, b.x), max(a.y, b.y)
+    ix2, iy2 = min(ax2, bx2), min(ay2, by2)
+    iw, ih = max(0.0, ix2 - ix1), max(0.0, iy2 - iy1)
+    inter = iw * ih
+    if inter <= 0:
+        return 0.0
+    union = a.w * a.h + b.w * b.h - inter
+    return inter / union if union > 0 else 0.0
+
+
+def _nms_boxes(boxes: list[BoundingBox], iou_threshold: float = 0.45) -> list[BoundingBox]:
+    """Collapse overlapping same-label boxes (YOLO often double-fires on one bottle)."""
+    if len(boxes) <= 1:
+        return boxes
+    ordered = sorted(boxes, key=lambda b: b.confidence, reverse=True)
+    kept: list[BoundingBox] = []
+    for box in ordered:
+        if any(
+            box.label == other.label and _iou(box, other) >= iou_threshold
+            for other in kept
+        ):
+            continue
+        kept.append(box)
+    return kept
+
+
 def _boxes_from_results(results: Any, width: int, height: int) -> list[BoundingBox]:
     boxes: list[BoundingBox] = []
     if not results:
@@ -67,11 +96,14 @@ def detect_plastic(image_bytes: bytes, declared_mime: str | None = None) -> Dete
     if not plastic_boxes and boxes:
         plastic_boxes = boxes
 
+    # Merge duplicate overlaps so one bottle ≠ multiple boxes.
+    plastic_boxes = _nms_boxes(plastic_boxes, iou_threshold=settings.model_iou_threshold)
+
     labels = [b.label for b in plastic_boxes]
     detected_class = dominant_class(labels)
-    # Count only the dominant class — matches the badge shown in the sell UI.
-    # Total plastic_boxes can be higher when YOLO also remaps cups/bags/etc.
-    detected_count = sum(1 for b in plastic_boxes if b.label == detected_class)
+    # Only keep dominant-class boxes for UI + qty (what Confirmed qty represents).
+    class_boxes = [b for b in plastic_boxes if b.label == detected_class]
+    detected_count = len(class_boxes)
     plastic_types = sorted({b.label for b in plastic_boxes})
 
     # Category certainty: share of boxes agreeing with dominant class.
@@ -81,7 +113,7 @@ def detect_plastic(image_bytes: bytes, declared_mime: str | None = None) -> Dete
         agree = 0.2
 
     confidence = compute_overall_confidence(
-        box_confidences=[b.confidence for b in plastic_boxes],
+        box_confidences=[b.confidence for b in class_boxes] or [b.confidence for b in plastic_boxes],
         image=image,
         category_certainty=agree,
     )
@@ -97,6 +129,7 @@ def detect_plastic(image_bytes: bytes, declared_mime: str | None = None) -> Dete
         detected_class = "Other"
         decision = "MANUAL_REVIEW" if confidence >= 0.35 else "REJECT"
         weight = 0.0
+        class_boxes = []
 
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
     megapixels = round((image.width * image.height) / 1_000_000, 3)
@@ -127,7 +160,7 @@ def detect_plastic(image_bytes: bytes, declared_mime: str | None = None) -> Dete
         detected_count=detected_count,
         confidence=confidence,
         decision=decision,  # type: ignore[arg-type]
-        boxes=plastic_boxes,
+        boxes=class_boxes,
         plastic_types=plastic_types,
         estimated_weight_grams=weight,
         processing_time_ms=elapsed_ms,

@@ -82,6 +82,8 @@ export const adminProductSchema = z.object({
   materials: z.array(z.string().max(80)).max(20).optional(),
   imageUrl: z.string().url("Image must be a valid URL").optional(),
   isActive: z.boolean().optional().default(true),
+  /** When set, marks the matching OPEN product request as fulfilled after create. */
+  requestId: z.string().min(1).optional(),
 });
 
 export const adminCategorySchema = z.object({
@@ -92,4 +94,26 @@ export const adminCategorySchema = z.object({
     .max(100)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   description: z.string().max(500).optional(),
+});
+
+export const createProductRequestSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(2, "Product name must be at least 2 characters")
+    .max(160),
+  description: z
+    .string()
+    .trim()
+    .min(10, "Please describe what you need (at least 10 characters)")
+    .max(2000),
+});
+
+export const rejectProductRequestSchema = z.object({
+  requestId: z.string().min(1),
+  adminNotes: z.string().trim().max(1000).optional(),
+});
+
+export const fulfillProductRequestSchema = z.object({
+  requestId: z.string().min(1),
 });

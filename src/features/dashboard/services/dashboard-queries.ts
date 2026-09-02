@@ -31,6 +31,32 @@ const PENDING_PICKUP: PickupStatus[] = [
   PickupStatus.AWAITING_SIGNATURE,
 ];
 
+function hrefFromNotificationData(data: unknown): string | null {
+  if (!data || typeof data !== "object") return null;
+  const href = (data as { href?: unknown }).href;
+  return typeof href === "string" && href.startsWith("/") ? href : null;
+}
+
+function mapNotification(n: {
+  id: string;
+  type: NotificationItem["type"];
+  title: string;
+  body: string;
+  readAt: Date | null;
+  createdAt: Date;
+  data?: unknown;
+}): NotificationItem {
+  return {
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    readAt: n.readAt,
+    createdAt: n.createdAt,
+    href: hrefFromNotificationData(n.data),
+  };
+}
+
 function monthLabels(count: number): { key: string; label: string; start: Date; end: Date }[] {
   const now = new Date();
   const months: { key: string; label: string; start: Date; end: Date }[] = [];
@@ -342,14 +368,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     impact.rankCache ??
     null;
 
-  const mappedNotifications: NotificationItem[] = notifications.map((n) => ({
-    id: n.id,
-    type: n.type,
-    title: n.title,
-    body: n.body,
-    readAt: n.readAt,
-    createdAt: n.createdAt,
-  }));
+  const mappedNotifications: NotificationItem[] = notifications.map(mapNotification);
 
   const activities: ActivityItem[] = [
     ...recentTransactions.map((t) => ({
@@ -485,14 +504,7 @@ export async function getNotificationsPageData(userId: string) {
   ]);
 
   return {
-    notifications: notifications.map((n) => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      body: n.body,
-      readAt: n.readAt,
-      createdAt: n.createdAt,
-    })) satisfies NotificationItem[],
+    notifications: notifications.map(mapNotification) satisfies NotificationItem[],
     unread,
   };
 }

@@ -16,6 +16,8 @@ import {
   upsertSettingSchema,
   walletAdjustSchema,
 } from "@/validations/admin";
+import { rejectProductRequestSchema } from "@/validations/marketplace";
+import { rejectProductRequest } from "@/features/admin/services/admin-product-requests";
 import { setUserActiveStatus } from "@/features/admin/services/admin-users";
 import { reviewPlasticListing } from "@/features/admin/services/admin-listings";
 import { adjustInventory } from "@/features/admin/services/admin-inventory";
@@ -55,6 +57,8 @@ function mapError(error: unknown): string {
     ADJUSTMENT_TOO_LARGE: "Adjustment exceeds the configured maximum.",
     INSUFFICIENT_BALANCE: "User wallet balance is insufficient.",
     PRODUCT_NOT_FOUND: "Product not found.",
+    PRODUCT_REQUEST_NOT_FOUND: "Product request not found.",
+    PRODUCT_REQUEST_NOT_OPEN: "This request is no longer open.",
     COLLECTOR_NOT_FOUND: "Collector not found.",
     RECYCLER_NOT_FOUND: "Recycler not found.",
   };
@@ -70,11 +74,14 @@ function revalidateAdmin() {
   revalidatePath("/admin/pickup-requests");
   revalidatePath("/admin/inventory");
   revalidatePath("/admin/products");
+  revalidatePath("/admin/product-requests");
   revalidatePath("/admin/orders");
   revalidatePath("/admin/coin-economy");
   revalidatePath("/admin/analytics");
   revalidatePath("/admin/reports");
   revalidatePath("/admin/settings");
+  revalidatePath("/notifications");
+  revalidatePath("/marketplace");
 }
 
 export async function setUserActiveAction(
@@ -262,6 +269,31 @@ export async function globalAdminSearchAction(
     }
     const data = await globalAdminSearch(parsed.data.q);
     return { success: true, data };
+  } catch (error) {
+    return { success: false, error: mapError(error) };
+  }
+}
+
+export async function rejectProductRequestAction(
+  raw: unknown,
+): Promise<AdminActionResult<{ id: string }>> {
+  try {
+    const admin = await requireAdmin();
+    const parsed = rejectProductRequestSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { success: false, error: "Invalid product request." };
+    }
+    const updated = await rejectProductRequest({
+      adminId: admin.id,
+      requestId: parsed.data.requestId,
+      adminNotes: parsed.data.adminNotes,
+    });
+    revalidateAdmin();
+    return {
+      success: true,
+      data: { id: updated.id },
+      message: "Request rejected.",
+    };
   } catch (error) {
     return { success: false, error: mapError(error) };
   }

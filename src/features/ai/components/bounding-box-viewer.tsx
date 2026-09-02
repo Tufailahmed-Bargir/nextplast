@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export interface BoxOverlay {
@@ -17,7 +16,10 @@ interface BoundingBoxViewerProps {
   className?: string;
 }
 
-/** Server-friendly bounding-box overlay (no client JS required). */
+/**
+ * Bounding-box overlay sized to the image itself so normalized box
+ * coords align with the bottles the user sees (no object-cover crop).
+ */
 export function BoundingBoxViewer({
   imageUrl,
   boxes,
@@ -25,19 +27,13 @@ export function BoundingBoxViewer({
   className,
 }: BoundingBoxViewerProps) {
   return (
-    <div
-      className={cn(
-        "relative aspect-video overflow-hidden rounded-xl bg-muted",
-        className,
-      )}
-    >
-      <Image
+    <div className={cn("relative w-full overflow-hidden rounded-xl bg-muted", className)}>
+      {/* Native img: wrapper height follows image aspect → box % coords stay correct */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={imageUrl}
         alt={alt}
-        fill
-        className="object-cover"
-        sizes="(max-width: 1024px) 100vw, 50vw"
-        unoptimized
+        className="block h-auto w-full"
       />
       {boxes.map((box, i) => (
         <div
