@@ -11,7 +11,7 @@ from app.schemas.detection import BoundingBox, DetectionResponse, ImageMetadata
 from app.services.confidence import compute_overall_confidence, decision_from_confidence
 from app.services.preprocessing import PreprocessedImage, preprocess_image
 from app.services.weight import estimate_weight_grams
-from app.utils.classes import dominant_class, normalize_label
+from app.utils.classes import dominant_class, refine_plastic_label
 
 
 def _boxes_from_results(results: Any, width: int, height: int) -> list[BoundingBox]:
@@ -29,7 +29,6 @@ def _boxes_from_results(results: Any, width: int, height: int) -> list[BoundingB
         conf = float(box.conf[0].item()) if box.conf is not None else 0.0
         cls_id = int(box.cls[0].item()) if box.cls is not None else -1
         raw_name = names.get(cls_id, "Other") if isinstance(names, dict) else "Other"
-        label = normalize_label(str(raw_name))
 
         x1, y1, x2, y2 = xyxy
         w = max(0.0, (x2 - x1) / max(width, 1))
@@ -39,6 +38,8 @@ def _boxes_from_results(results: Any, width: int, height: int) -> list[BoundingB
         # Clamp to unit square.
         w = min(w, 1.0 - x)
         h = min(h, 1.0 - y)
+
+        label = refine_plastic_label(str(raw_name), w, h)
 
         boxes.append(
             BoundingBox(
@@ -68,12 +69,14 @@ def detect_plastic(image_bytes: bytes, declared_mime: str | None = None) -> Dete
 
     labels = [b.label for b in plastic_boxes]
     detected_class = dominant_class(labels)
-    detected_count = len(plastic_boxes)
+    # Count only the dominant class — matches the badge shown in the sell UI.
+    # Total plastic_boxes can be higher when YOLO also remaps cups/bags/etc.
+    detected_count = sum(1 for b in plastic_boxes if b.label == detected_class)
     plastic_types = sorted({b.label for b in plastic_boxes})
 
     # Category certainty: share of boxes agreeing with dominant class.
     if plastic_boxes:
-        agree = sum(1 for b in plastic_boxes if b.label == detected_class) / len(plastic_boxes)
+        agree = detected_count / len(plastic_boxes)
     else:
         agree = 0.2
 
@@ -101,7 +104,8 @@ def detect_plastic(image_bytes: bytes, declared_mime: str | None = None) -> Dete
     raw_output: dict[str, Any] = {
         "ultralytics": {
             "names": getattr(results[0], "names", {}) if results else {},
-            "box_count": detected_count,
+            "box_count": len(plastic_boxes),
+            "dominant_class_count": detected_count,
         },
         "model": {
             "name": settings.model_name,

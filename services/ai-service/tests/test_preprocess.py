@@ -9,7 +9,7 @@ import pytest
 from PIL import Image
 
 from app.services.preprocessing import ImagePreprocessError, preprocess_image
-from app.utils.classes import dominant_class, normalize_label
+from app.utils.classes import dominant_class, normalize_label, refine_plastic_label
 from app.services.weight import estimate_weight_grams
 from app.services.confidence import decision_from_confidence
 
@@ -25,10 +25,20 @@ def test_normalize_label_maps_coco_bottle():
     assert normalize_label("bottle") == "PET Bottle"
     assert normalize_label("PET Bottle") == "PET Bottle"
     assert normalize_label("unknown-thing") == "Other"
+    assert normalize_label("vase") == "PET Bottle"
+
+
+def test_refine_tall_bowl_becomes_bottle():
+    # Tall box → bottle (COCO often mislabels bottles as bowl)
+    assert refine_plastic_label("bowl", box_w=0.2, box_h=0.45) == "PET Bottle"
+    # Wide squat bowl stays container
+    assert refine_plastic_label("bowl", box_w=0.4, box_h=0.2) == "Container"
 
 
 def test_dominant_class():
     assert dominant_class(["Cup", "Cup", "PET Bottle"]) == "Cup"
+    # Prefer bottles when tied with container-like classes
+    assert dominant_class(["PET Bottle", "Container"]) == "PET Bottle"
     assert dominant_class([]) == "Other"
 
 

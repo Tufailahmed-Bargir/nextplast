@@ -18,13 +18,15 @@ PLASTIC_CLASSES: tuple[str, ...] = (
 )
 
 # COCO class names → NexPlast plastic taxonomy.
-# Fine-tuned plastic weights can emit labels already in PLASTIC_CLASSES.
+# Stock YOLOv8n is COCO-trained (not plastic-specific). It often tags
+# upright bottles as vase/bowl — refine_plastic_label() corrects those.
 COCO_TO_PLASTIC: dict[str, str] = {
     "bottle": "PET Bottle",
     "cup": "Cup",
     "bowl": "Container",
-    "wine glass": "Other",
-    "vase": "Container",
+    "wine glass": "PET Bottle",
+    # Vase is the most common false label for plastic bottles in COCO.
+    "vase": "PET Bottle",
     "handbag": "Plastic Bag",
     "backpack": "Plastic Bag",
     "suitcase": "Plastic Bag",
@@ -56,6 +58,10 @@ COCO_TO_PLASTIC: dict[str, str] = {
     "bed": "Other",
     "bench": "Other",
 }
+
+# COCO labels that are frequently confused with upright bottles.
+_BOTTLE_CONFUSABLE = frozenset({"bowl", "cup", "vase", "wine glass"})
+_BOTTLE_CLASSES = frozenset({"PET Bottle", "HDPE Bottle"})
 
 # Average grams per item (preview only — collector weight is final).
 AVG_WEIGHT_GRAMS: dict[str, float] = {
@@ -105,10 +111,40 @@ def normalize_label(raw: str) -> str:
     return "Other"
 
 
+def refine_plastic_label(raw: str, box_w: float, box_h: float) -> str:
+    """Map a COCO/YOLO label with box shape so tall vessels become PET Bottle.
+
+    Stock COCO YOLO often labels plastic bottles as vase/bowl/cup. In a
+    recycling app, tall boxes (height > width) for those classes are bottles.
+    """
+    lower = raw.strip().lower()
+    base = normalize_label(raw)
+    aspect = box_h / max(box_w, 1e-6)
+
+    if lower in _BOTTLE_CONFUSABLE and aspect >= 1.1:
+        return "PET Bottle"
+
+    # Wide squat bowls stay containers; tall bowls → bottle.
+    if lower == "bowl" and aspect < 1.0:
+        return "Container"
+
+    return base
+
+
 def dominant_class(labels: list[str]) -> str:
     if not labels:
         return "Other"
     counts: dict[str, int] = {}
     for label in labels:
         counts[label] = counts.get(label, 0) + 1
+
+    bottle_count = sum(counts.get(c, 0) for c in _BOTTLE_CLASSES)
+    # Prefer bottles when present — COCO often mixes bottle + bowl/vase/container.
+    if bottle_count > 0:
+        containerish = counts.get("Container", 0) + counts.get("Cup", 0)
+        if bottle_count >= containerish:
+            if counts.get("PET Bottle", 0) >= counts.get("HDPE Bottle", 0):
+                return "PET Bottle"
+            return "HDPE Bottle"
+
     return max(counts.items(), key=lambda item: item[1])[0]

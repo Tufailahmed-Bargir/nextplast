@@ -172,6 +172,13 @@ export async function detectPlasticInImage(
   if (config.configured) {
     try {
       const remote = await callAiDetect(input.buffer, input.mimeType);
+      // Confirmed qty must match boxes of the dominant class (what the UI badge shows),
+      // not every plastic-mapped box YOLO returned.
+      const dominantBoxCount = remote.boxes.filter(
+        (b) => b.label === remote.detectedClass,
+      ).length;
+      const detectedCount =
+        dominantBoxCount > 0 ? dominantBoxCount : remote.detectedCount;
       const confidence = calculateOverallConfidence({
         modelConfidence: remote.confidence,
         imageWidth: remote.image.width,
@@ -179,14 +186,13 @@ export async function detectPlasticInImage(
         imageBytes: remote.image.bytes,
         categoryCertainty:
           remote.boxes.length > 0
-            ? remote.boxes.filter((b) => b.label === remote.detectedClass)
-                .length / remote.boxes.length
+            ? dominantBoxCount / remote.boxes.length
             : 0.35,
       });
 
       return {
         detectedClass: remote.detectedClass,
-        detectedCount: remote.detectedCount,
+        detectedCount,
         confidence,
         decision: mapDecision(
           confidence < 0.4
@@ -200,7 +206,7 @@ export async function detectPlasticInImage(
           remote.estimatedWeightGrams ||
             estimatePlasticWeightGrams({
               detectedClass: remote.detectedClass,
-              detectedCount: remote.detectedCount,
+              detectedCount,
               confidence,
               plasticTypes: remote.plasticTypes,
             }),
