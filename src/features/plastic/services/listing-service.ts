@@ -545,6 +545,8 @@ export async function savePickupDetails(input: {
   userId: string;
   listingId: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
   scheduledAt: Date;
   specialInstructions?: string;
 }) {
@@ -562,17 +564,26 @@ export async function savePickupDetails(input: {
     },
   });
 
+  const hasCoords =
+    typeof input.latitude === "number" && typeof input.longitude === "number";
+  const coords = {
+    latitude: hasCoords ? input.latitude : null,
+    longitude: hasCoords ? input.longitude : null,
+  };
+
   await prisma.pickupRequest.upsert({
     where: { listingId: input.listingId },
     create: {
       listingId: input.listingId,
       address: input.address,
+      ...coords,
       scheduledAt: input.scheduledAt,
       status: PickupStatus.REQUESTED,
       notes: input.specialInstructions,
     },
     update: {
       address: input.address,
+      ...coords,
       scheduledAt: input.scheduledAt,
       notes: input.specialInstructions,
       status: PickupStatus.REQUESTED,
@@ -580,6 +591,78 @@ export async function savePickupDetails(input: {
   });
 
   return getListingForUser(input.listingId, input.userId);
+}
+
+const ADDRESS_LOCKED_LISTING: ListingStatus[] = [
+  ListingStatus.COMPLETED,
+  ListingStatus.CANCELLED,
+  ListingStatus.AI_REJECTED,
+];
+
+const ADDRESS_LOCKED_PICKUP: PickupStatus[] = [
+  PickupStatus.COMPLETED,
+  PickupStatus.CANCELLED,
+];
+
+/** Customers may fix the pickup address any time until the pickup is closed. */
+export function canEditPickupAddress(
+  listingStatus: ListingStatus,
+  pickupStatus: PickupStatus | null | undefined,
+): boolean {
+  if (!pickupStatus) return false;
+  return (
+    !ADDRESS_LOCKED_LISTING.includes(listingStatus) &&
+    !ADDRESS_LOCKED_PICKUP.includes(pickupStatus)
+  );
+}
+
+/**
+ * Update the address on a submitted pickup. Admin and collector screens read
+ * PickupRequest.address, so they pick up the change automatically.
+ */
+export async function updatePickupAddress(input: {
+  userId: string;
+  listingId: string;
+  address: string;
+  latitude?: number | null;
+  longitude?: number | null;
+}) {
+  const listing = await prisma.plasticListing.findFirst({
+    where: { id: input.listingId, userId: input.userId, deletedAt: null },
+    include: { pickupRequest: true },
+  });
+  if (!listing) throw new Error("LISTING_NOT_FOUND");
+  const pickup = listing.pickupRequest;
+  if (!pickup) throw new Error("PICKUP_REQUIRED");
+  if (!canEditPickupAddress(listing.status, pickup.status)) {
+    throw new Error("PICKUP_ADDRESS_LOCKED");
+  }
+
+  const hasCoords =
+    typeof input.latitude === "number" && typeof input.longitude === "number";
+
+  await prisma.$transaction([
+    prisma.plasticListing.update({
+      where: { id: listing.id },
+      data: { pickupAddress: input.address },
+    }),
+    prisma.pickupRequest.update({
+      where: { id: pickup.id },
+      data: {
+        address: input.address,
+        latitude: hasCoords ? input.latitude : null,
+        longitude: hasCoords ? input.longitude : null,
+      },
+    }),
+  ]);
+
+  logger.info(
+    "Pickup address updated by customer",
+    { listingId: listing.id, pickupId: pickup.id, pickupStatus: pickup.status },
+    "plastic",
+  );
+
+  return { pickupId: pickup.id };
 }
 
 export async function submitListing(input: {

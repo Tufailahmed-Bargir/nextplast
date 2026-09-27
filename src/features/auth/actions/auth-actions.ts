@@ -23,7 +23,6 @@ import {
 import { getRoleHomePath } from "@/utils/roles";
 import { logger } from "@/utils/logger";
 import type { UserRole } from "@/constants/roles";
-import { UserRole as Roles } from "@/constants/roles";
 
 export type ActionResult =
   | { success: true; message?: string; redirectTo?: string; resetToken?: string }
@@ -43,7 +42,7 @@ function zodFieldErrors(
 }
 
 /**
- * Public registration — always creates a USER account.
+ * Public registration — user selects role (USER / COLLECTOR / RECYCLER).
  */
 export async function registerAction(raw: unknown): Promise<ActionResult> {
   const parsed = registerSchema.safeParse(raw);
@@ -60,6 +59,7 @@ export async function registerAction(raw: unknown): Promise<ActionResult> {
       name: parsed.data.name,
       email: parsed.data.email,
       password: parsed.data.password,
+      role: parsed.data.role,
     });
 
     await signIn("credentials", {
@@ -71,7 +71,7 @@ export async function registerAction(raw: unknown): Promise<ActionResult> {
     return {
       success: true,
       message: "Account created successfully.",
-      redirectTo: getRoleHomePath(Roles.USER),
+      redirectTo: getRoleHomePath(parsed.data.role),
     };
   } catch (error) {
     if (error instanceof Error && error.message === "EMAIL_IN_USE") {

@@ -18,6 +18,7 @@ import {
   savePlasticDetails,
   serializeSellListing,
   submitListing,
+  updatePickupAddress,
   uploadListingImages,
 } from "@/features/plastic/services/listing-service";
 import { ensurePlasticCategories } from "@/features/plastic/services/categories";
@@ -25,8 +26,11 @@ import {
   pickupDetailsSchema,
   plasticDetailsSchema,
   reviewDetectionsSchema,
+  updatePickupAddressSchema,
 } from "@/validations/plastic";
 import { sniffImageMime } from "@/features/ai/services/plastic-detector";
+import { lookupPincode } from "@/features/geo/services/geo-service";
+import { composeAddress } from "@/features/geo/lib/address";
 import { logger } from "@/utils/logger";
 
 export type SellActionResult<T = unknown> =
@@ -54,6 +58,8 @@ function mapError(error: unknown): string {
     DETAILS_REQUIRED: "Complete plastic details before submitting.",
     PICKUP_REQUIRED: "Add pickup address and schedule before submitting.",
     PICKUP_IN_PAST: "Pickup time must be in the future.",
+    PICKUP_ADDRESS_LOCKED:
+      "This pickup is already completed or cancelled, so the address can't be changed.",
     IMAGE_FETCH_FAILED: "Could not read an uploaded image for AI analysis.",
     INVALID_CATEGORY: "Select a valid plastic category.",
   };
@@ -239,6 +245,21 @@ export async function savePlasticDetailsAction(
   }
 }
 
+/** India Post check; lookup outages are allowed through. */
+async function checkPinMatchesState(parts: {
+  pinCode: string;
+  state: string;
+}): Promise<string | null> {
+  const pin = await lookupPincode(parts.pinCode);
+  if (pin.status === "not_found") {
+    return `PIN code ${parts.pinCode} was not found. Please check it.`;
+  }
+  if (pin.status === "found" && pin.state && pin.state !== parts.state) {
+    return `PIN code ${parts.pinCode} belongs to ${pin.state}, not ${parts.state}.`;
+  }
+  return null;
+}
+
 export async function savePickupDetailsAction(
   raw: unknown,
 ): Promise<SellActionResult<{ ok: true }>> {
@@ -252,16 +273,59 @@ export async function savePickupDetailsAction(
       };
     }
 
+    const parts = parsed.data.addressParts;
+    const pinError = await checkPinMatchesState(parts);
+    if (pinError) return { success: false, error: pinError };
+
     await savePickupDetails({
       userId: user.id,
       listingId: parsed.data.listingId,
-      address: parsed.data.address,
+      address: composeAddress(parts),
+      latitude: parsed.data.latitude,
+      longitude: parsed.data.longitude,
       scheduledAt: parsed.data.scheduledAt,
       specialInstructions: parsed.data.specialInstructions,
     });
 
     return { success: true, data: { ok: true } };
   } catch (error) {
+    return { success: false, error: mapError(error) };
+  }
+}
+
+export async function updatePickupAddressAction(
+  raw: unknown,
+): Promise<SellActionResult<{ ok: true }>> {
+  try {
+    const user = await requireSellUser();
+    const parsed = updatePickupAddressSchema.safeParse(raw);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues[0]?.message ?? "Invalid pickup address.",
+      };
+    }
+
+    const parts = parsed.data.addressParts;
+    const pinError = await checkPinMatchesState(parts);
+    if (pinError) return { success: false, error: pinError };
+
+    await updatePickupAddress({
+      userId: user.id,
+      listingId: parsed.data.listingId,
+      address: composeAddress(parts),
+      latitude: parsed.data.latitude,
+      longitude: parsed.data.longitude,
+    });
+
+    revalidatePath(`/sell/${parsed.data.listingId}`);
+    revalidateSellPaths();
+    revalidatePath("/admin", "layout");
+    revalidatePath("/collector", "layout");
+
+    return { success: true, data: { ok: true }, message: "Pickup address updated." };
+  } catch (error) {
+    logger.error("updatePickupAddress failed", { error }, "plastic");
     return { success: false, error: mapError(error) };
   }
 }

@@ -15,6 +15,7 @@ export default async function RecyclerLayout({
       title="Recycler"
       sidebarTitle="Recycler"
       userName={session?.user?.name ?? "Recycler"}
+      profileHref="/recycler/profile"
     >
       {children}
     </DashboardShell>

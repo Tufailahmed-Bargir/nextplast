@@ -37,13 +37,14 @@ export async function listUsers(): Promise<SafeUser[]> {
 }
 
 /**
- * Public registration always creates USER accounts.
- * Role elevation is admin-only via assignUserRoleByAdmin.
+ * Public registration with a self-selected role (USER / COLLECTOR / RECYCLER).
+ * Seller / Admin / Super Admin cannot be chosen here.
  */
 export async function createUserWithPassword(input: {
   name: string;
   email: string;
   password: string;
+  role?: UserRole;
 }): Promise<SafeUser> {
   const email = input.email.toLowerCase().trim();
   const existing = await findUserByEmail(email);
@@ -51,16 +52,36 @@ export async function createUserWithPassword(input: {
     throw new Error("EMAIL_IN_USE");
   }
 
+  const role =
+    input.role &&
+    (adminAssignableRoles as readonly string[]).includes(input.role)
+      ? input.role
+      : Roles.USER;
+
   const passwordHash = await hashPassword(input.password);
   const user = await prisma.user.create({
     data: {
       name: input.name.trim(),
       email,
       passwordHash,
-      role: Roles.USER,
+      role,
       emailVerified: null,
     },
   });
+
+  if (role === Roles.COLLECTOR) {
+    const { ensureCollectorProfile } = await import(
+      "@/features/collector/services/ensure-collector"
+    );
+    await ensureCollectorProfile(user.id);
+  }
+
+  if (role === Roles.RECYCLER) {
+    const { ensureRecyclerProfile } = await import(
+      "@/features/admin/services/ensure-recycler"
+    );
+    await ensureRecyclerProfile(user.id, user.name ?? "Recycler Partner");
+  }
 
   logger.info("User registered", { userId: user.id, role: user.role }, "auth");
   return toSafeUser(user);

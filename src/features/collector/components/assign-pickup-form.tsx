@@ -43,6 +43,7 @@ export function AssignPickupForm({
       <Select
         value={collectorId}
         onValueChange={(value) => setCollectorId(value ?? "")}
+        items={collectors.map((c) => ({ value: c.id, label: c.label }))}
       >
         <SelectTrigger className="sm:w-56">
           <SelectValue placeholder="Select collector" />

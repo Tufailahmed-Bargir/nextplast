@@ -5,6 +5,7 @@ import { getNotificationsPageData } from "@/features/dashboard";
 import { NotificationList } from "@/features/dashboard/components/notification-list";
 import { markAllNotificationsReadAction } from "@/features/dashboard/actions/notification-actions";
 import { Button } from "@/components/ui/button";
+import { UnreadCountSync } from "@/components/layout/notification-bell";
 
 export const metadata: Metadata = {
   title: "Notifications",
@@ -23,6 +24,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <UnreadCountSync count={unread} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold">Notifications</h2>

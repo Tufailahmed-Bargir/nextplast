@@ -37,6 +37,21 @@ function mapError(error: unknown): string {
     if (error.code === "UNAUTHORIZED") return "Please sign in.";
   }
   const message = error instanceof Error ? error.message : "unknown";
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code?: string }).code ?? "")
+      : "";
+
+  // Friend pulled code but skipped prisma generate / db push.
+  if (
+    code === "P2021" ||
+    /product_requests/i.test(message) ||
+    /ProductRequest/i.test(message) ||
+    /does not exist/i.test(message)
+  ) {
+    return "Database is missing product requests. Run: bunx prisma db push && bunx prisma generate, then restart the app.";
+  }
+
   const map: Record<string, string> = {
     MARKETPLACE_DISABLED: "Marketplace is currently disabled.",
     PRODUCT_NOT_FOUND: "Product not found.",
@@ -238,6 +253,7 @@ export async function createProductRequestAction(
       message: "Request sent. We’ll notify you when it’s listed.",
     };
   } catch (error) {
+    logger.error("createProductRequest failed", { error }, "marketplace");
     return { success: false, error: mapError(error) };
   }
 }

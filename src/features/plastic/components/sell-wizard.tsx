@@ -22,8 +22,16 @@ import {
 } from "@/features/plastic/components/plastic-details-form";
 import {
   PickupScheduler,
+  validatePickupAddress,
+  type PickupAddressErrors,
   type PickupDetailsValue,
 } from "@/features/plastic/components/pickup-scheduler";
+import {
+  EMPTY_ADDRESS_PARTS,
+  composeAddress,
+  parseComposedAddress,
+} from "@/features/geo/lib/address";
+import type { AddressParts } from "@/features/geo/types";
 import { CoinPreviewCard } from "@/features/plastic/components/coin-preview-card";
 import {
   getPlasticCategoriesAction,
@@ -80,10 +88,22 @@ export function SellWizard() {
     notes: "",
   });
   const [pickup, setPickup] = useState<PickupDetailsValue>({
-    address: "",
+    addressParts: { ...EMPTY_ADDRESS_PARTS },
+    latitude: null,
+    longitude: null,
+    pinLookup: null,
     scheduledAt: "",
     specialInstructions: "",
   });
+  const [pickupErrors, setPickupErrors] = useState<PickupAddressErrors>({});
+  const clearPickupErrors = useCallback((keys: (keyof AddressParts)[]) => {
+    setPickupErrors((prev) => {
+      if (!keys.some((k) => prev[k])) return prev;
+      const next = { ...prev };
+      for (const k of keys) delete next[k];
+      return next;
+    });
+  }, []);
 
   const hydrateFromListing = useCallback(
     (
@@ -102,14 +122,20 @@ export function SellWizard() {
       }));
       if (data.pickupRequest) {
         setPickup({
-          address: data.pickupRequest.address,
+          addressParts: parseComposedAddress(data.pickupRequest.address),
+          latitude: data.pickupRequest.latitude,
+          longitude: data.pickupRequest.longitude,
+          pinLookup: null,
           scheduledAt: data.pickupRequest.scheduledAt
             ? new Date(data.pickupRequest.scheduledAt).toISOString()
             : "",
           specialInstructions: data.pickupRequest.notes ?? "",
         });
       } else if (data.pickupAddress) {
-        setPickup((prev) => ({ ...prev, address: data.pickupAddress ?? "" }));
+        setPickup((prev) => ({
+          ...prev,
+          addressParts: parseComposedAddress(data.pickupAddress),
+        }));
       }
 
       if (!options?.resumeStep) return;
@@ -250,14 +276,22 @@ export function SellWizard() {
 
   function savePickup() {
     if (!listingId) return;
-    if (!pickup.address || !pickup.scheduledAt) {
-      toast.error("Add address and pickup time.");
+    if (!pickup.scheduledAt) {
+      toast.error("Choose a pickup date.");
+      return;
+    }
+    const addressErrors = validatePickupAddress(pickup);
+    setPickupErrors(addressErrors);
+    if (Object.keys(addressErrors).length > 0) {
+      toast.error("Please fix the highlighted address fields.");
       return;
     }
     startTransition(async () => {
       const result = await savePickupDetailsAction({
         listingId,
-        address: pickup.address,
+        addressParts: pickup.addressParts,
+        latitude: pickup.latitude,
+        longitude: pickup.longitude,
         scheduledAt: pickup.scheduledAt,
         specialInstructions: pickup.specialInstructions || undefined,
       });
@@ -388,7 +422,12 @@ export function SellWizard() {
           {step === 5 ? (
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <PickupScheduler value={pickup} onChange={setPickup} />
+                <PickupScheduler
+                  value={pickup}
+                  onChange={setPickup}
+                  addressErrors={pickupErrors}
+                  onAddressFieldsEdited={clearPickupErrors}
+                />
               </div>
               <CoinPreviewCard estimatedCoins={estimatedCoins} />
             </div>
@@ -404,7 +443,8 @@ export function SellWizard() {
                   <strong>Quality:</strong> {details.quality}
                 </p>
                 <p className="mt-2">
-                  <strong>Address:</strong> {pickup.address || listing?.pickupAddress}
+                  <strong>Address:</strong>{" "}
+                  {composeAddress(pickup.addressParts) || listing?.pickupAddress}
                 </p>
                 <p className="mt-2 text-muted-foreground">
                   Submitting notifies admins for collector assignment. Final coins

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Recycle, Store, Truck, Wallet } from "lucide-react";
+import { ClipboardList, Leaf, Recycle, Store, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -11,10 +11,16 @@ const actions = [
     className: "text-emerald-600",
   },
   {
-    href: "/sell",
-    label: "Schedule Pickup",
-    icon: Truck,
+    href: "/listings",
+    label: "My Listings",
+    icon: ClipboardList,
     className: "text-sky-600",
+  },
+  {
+    href: "/impact",
+    label: "Impact",
+    icon: Leaf,
+    className: "text-lime-600",
   },
   {
     href: "/marketplace",
@@ -35,7 +41,7 @@ const actions = [
  */
 export function QuickActions() {
   return (
-    <Card>
+    <Card className="overflow-visible self-start">
       <CardHeader>
         <CardTitle>Quick actions</CardTitle>
       </CardHeader>
