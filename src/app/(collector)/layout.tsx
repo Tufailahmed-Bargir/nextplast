@@ -18,6 +18,7 @@ export default async function CollectorLayout({
       title="Collector"
       sidebarTitle="Collector"
       userName={session?.user?.name ?? "Collector"}
+      profileHref="/collector/profile"
     >
       {children}
     </DashboardShell>

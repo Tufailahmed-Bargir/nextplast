@@ -6,17 +6,21 @@ import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Mail, Lock, User, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Briefcase } from "lucide-react";
 import { useState, useTransition } from "react";
-import { registerSchema, type RegisterInput } from "@/validations/auth";
+import {
+  publicRegisterRoles,
+  registerSchema,
+  type RegisterInput,
+} from "@/validations/auth";
 import { registerAction } from "@/features/auth/actions/auth-actions";
+import { ROLE_LABELS, UserRole } from "@/constants/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 /**
- * Public registration — always creates a USER account.
- * Collector/Recycler roles are assigned only by Admin.
+ * Public registration — user picks their role at signup.
  */
 export function RegisterForm() {
   const router = useRouter();
@@ -30,6 +34,7 @@ export function RegisterForm() {
     formState: { errors },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
+    defaultValues: { role: UserRole.USER },
   });
 
   function onSubmit(data: RegisterInput) {
@@ -98,6 +103,27 @@ export function RegisterForm() {
           </div>
           {errors.email ? (
             <p className="text-sm text-destructive">{errors.email.message}</p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="role">I want to join as</Label>
+          <div className="relative">
+            <Briefcase className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <select
+              id="role"
+              className="flex h-10 w-full appearance-none rounded-md border border-input bg-transparent py-2 pl-10 pr-8 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+              {...register("role")}
+            >
+              {publicRegisterRoles.map((role) => (
+                <option key={role} value={role}>
+                  {ROLE_LABELS[role]}
+                </option>
+              ))}
+            </select>
+          </div>
+          {errors.role ? (
+            <p className="text-sm text-destructive">{errors.role.message}</p>
           ) : null}
         </div>
 

@@ -2,12 +2,24 @@
  * Google Maps helpers for collector navigation (college-project scope).
  */
 
-export function googleMapsSearchUrl(address: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+type MapCoords = {
+  latitude?: number | { toString(): string } | null;
+  longitude?: number | { toString(): string } | null;
+};
+
+/** Exact pin when the customer saved a map location, else the address text. */
+function mapTarget(address: string, coords?: MapCoords): string {
+  const lat = coords?.latitude != null ? Number(coords.latitude) : NaN;
+  const lng = coords?.longitude != null ? Number(coords.longitude) : NaN;
+  return Number.isFinite(lat) && Number.isFinite(lng) ? `${lat},${lng}` : address;
 }
 
-export function googleMapsDirectionsUrl(address: string): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+export function googleMapsSearchUrl(address: string, coords?: MapCoords): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapTarget(address, coords))}`;
+}
+
+export function googleMapsDirectionsUrl(address: string, coords?: MapCoords): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapTarget(address, coords))}`;
 }
 
 /** Haversine distance in km when coordinates exist. */

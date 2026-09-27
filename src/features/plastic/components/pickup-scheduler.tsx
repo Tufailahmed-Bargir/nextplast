@@ -1,22 +1,33 @@
 "use client";
 
+import type { Dispatch, SetStateAction } from "react";
 import { addDays, format, setHours, setMinutes, isAfter } from "date-fns";
-import { MapPin } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import type { AddressParts } from "@/features/geo/types";
+import {
+  PickupAddressFields,
+  validatePickupAddress,
+  type PickupAddressErrors,
+  type PickupAddressValue,
+} from "@/features/plastic/components/pickup-address-fields";
 
-export interface PickupDetailsValue {
-  address: string;
+export { validatePickupAddress };
+export type { PickupAddressErrors };
+
+export interface PickupDetailsValue extends PickupAddressValue {
   scheduledAt: string;
   specialInstructions: string;
 }
 
 interface PickupSchedulerProps {
   value: PickupDetailsValue;
-  onChange: (value: PickupDetailsValue) => void;
+  onChange: Dispatch<SetStateAction<PickupDetailsValue>>;
+  addressErrors?: PickupAddressErrors;
+  onAddressFieldsEdited?: (keys: (keyof AddressParts)[]) => void;
 }
+
 
 function buildSlots(): { label: string; value: string; sub: string }[] {
   const now = new Date();
@@ -37,8 +48,8 @@ function buildSlots(): { label: string; value: string; sub: string }[] {
             ? "Today"
             : offset === 1
               ? "Tomorrow"
-              : format(day, "MMM d"),
-        sub: format(slot, "h:mm a"),
+              : format(day, "EEEE"),
+        sub: format(day, "d MMM yyyy"),
         value: slot.toISOString(),
       });
       break;
@@ -51,7 +62,12 @@ function buildSlots(): { label: string; value: string; sub: string }[] {
 /**
  * Pickup address, preferred slot, and special instructions.
  */
-export function PickupScheduler({ value, onChange }: PickupSchedulerProps) {
+export function PickupScheduler({
+  value,
+  onChange,
+  addressErrors,
+  onAddressFieldsEdited,
+}: PickupSchedulerProps) {
   const slots = buildSlots();
 
   return (
@@ -87,18 +103,13 @@ export function PickupScheduler({ value, onChange }: PickupSchedulerProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="address">Pickup address</Label>
-        <div className="relative">
-          <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Textarea
-            id="address"
-            className="pl-9"
-            rows={3}
-            value={value.address}
-            onChange={(e) => onChange({ ...value, address: e.target.value })}
-            placeholder="Building, street, city, PIN"
-          />
-        </div>
+        <Label className="block">Pickup address</Label>
+        <PickupAddressFields
+          value={value}
+          onChange={onChange}
+          errors={addressErrors}
+          onFieldsEdited={onAddressFieldsEdited}
+        />
       </div>
 
       <div className="space-y-2">

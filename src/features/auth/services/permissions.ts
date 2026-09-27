@@ -8,27 +8,10 @@ import {
  * Route permission map for RBAC.
  */
 export const rolePermissions = {
-  dashboard: [
-    UserRole.USER,
-    UserRole.SELLER,
-    UserRole.RECYCLER,
-    UserRole.COLLECTOR,
-    ...ADMIN_ROLES,
-  ],
+  dashboard: [UserRole.USER, UserRole.SELLER, ...ADMIN_ROLES],
   sell: [UserRole.USER, UserRole.SELLER, ...ADMIN_ROLES],
-  wallet: [
-    UserRole.USER,
-    UserRole.SELLER,
-    UserRole.COLLECTOR,
-    ...ADMIN_ROLES,
-  ],
-  marketplace: [
-    UserRole.USER,
-    UserRole.SELLER,
-    UserRole.COLLECTOR,
-    UserRole.RECYCLER,
-    ...ADMIN_ROLES,
-  ],
+  wallet: [UserRole.USER, UserRole.SELLER, ...ADMIN_ROLES],
+  marketplace: [UserRole.USER, UserRole.SELLER, ...ADMIN_ROLES],
   collector: [UserRole.COLLECTOR, ...ADMIN_ROLES],
   admin: [...ADMIN_ROLES],
   recyclerOps: [UserRole.RECYCLER, ...ADMIN_ROLES],

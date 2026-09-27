@@ -22,6 +22,10 @@ export default async function MarketplaceLayout({
       title="Marketplace"
       userName={session?.user?.name ?? (session ? "User" : "Guest")}
       coinBalance={coinBalance}
+      profileHref="/profile"
+      showMarketplaceLinks
+      showNotifications
+      showSearch
     >
       {children}
     </DashboardShell>

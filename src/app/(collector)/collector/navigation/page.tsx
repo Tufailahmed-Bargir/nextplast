@@ -68,7 +68,7 @@ export default async function CollectorNavigationPage() {
                 ) : null}
                 <div className="flex flex-wrap gap-2">
                   <a
-                    href={googleMapsSearchUrl(pickup.address)}
+                    href={googleMapsSearchUrl(pickup.address, pickup)}
                     target="_blank"
                     rel="noreferrer"
                     className={cn(
@@ -78,7 +78,7 @@ export default async function CollectorNavigationPage() {
                     Open Maps <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                   <a
-                    href={googleMapsDirectionsUrl(pickup.address)}
+                    href={googleMapsDirectionsUrl(pickup.address, pickup)}
                     target="_blank"
                     rel="noreferrer"
                     className={cn(

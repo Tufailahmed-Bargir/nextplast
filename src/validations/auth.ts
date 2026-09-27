@@ -15,13 +15,22 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
-/** Public registration — role is never accepted from the client. */
+/** Roles available at public registration (never Admin / Super Admin / Seller). */
+export const publicRegisterRoles = [
+  UserRole.USER,
+  UserRole.COLLECTOR,
+  UserRole.RECYCLER,
+] as const;
+
 export const registerSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters").max(100),
     email: z.string().email("Enter a valid email address"),
     password: passwordSchema,
     confirmPassword: z.string(),
+    role: z.enum(publicRegisterRoles, {
+      message: "Please select a role",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -50,7 +59,7 @@ export const resetPasswordSchema = z
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
-/** Roles an Admin may assign (Collector/Recycler elevation is admin-only). */
+/** Roles an Admin may assign (includes Seller; not available at public register). */
 export const adminAssignableRoles = [
   UserRole.USER,
   UserRole.COLLECTOR,

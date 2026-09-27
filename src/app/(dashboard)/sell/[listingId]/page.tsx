@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
-import { getListingForUser } from "@/features/plastic/services/listing-service";
+import {
+  canEditPickupAddress,
+  getListingForUser,
+} from "@/features/plastic/services/listing-service";
+import { EditPickupAddressDialog } from "@/features/plastic/components/edit-pickup-address-dialog";
 import { DetectionSummary } from "@/features/plastic/components/detection-summary";
 import { ListingTimeline } from "@/features/plastic/components/listing-timeline";
 import { CoinPreviewCard } from "@/features/plastic/components/coin-preview-card";
@@ -91,9 +95,28 @@ export default async function ListingDetailPage({ params }: PageProps) {
                 : "—"}
             </p>
             <p>Quality: {listing.quality}</p>
-            <p>
-              Address: {listing.pickupAddress ?? listing.pickupRequest?.address}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p>
+                Address: {listing.pickupRequest?.address ?? listing.pickupAddress}
+              </p>
+              {listing.pickupRequest &&
+              canEditPickupAddress(listing.status, listing.pickupRequest.status) ? (
+                <EditPickupAddressDialog
+                  listingId={listing.id}
+                  address={listing.pickupRequest.address}
+                  latitude={
+                    listing.pickupRequest.latitude != null
+                      ? Number(listing.pickupRequest.latitude)
+                      : null
+                  }
+                  longitude={
+                    listing.pickupRequest.longitude != null
+                      ? Number(listing.pickupRequest.longitude)
+                      : null
+                  }
+                />
+              ) : null}
+            </div>
             {listing.pickupRequest?.scheduledAt ? (
               <p>
                 Pickup: {formatDateTime(listing.pickupRequest.scheduledAt)}

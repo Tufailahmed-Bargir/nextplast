@@ -124,7 +124,9 @@ export function AdminProductForm({
       <Card>
         <CardHeader>
           <CardTitle>
-            {requestPrefill ? "Fulfill product request" : "Create product"}
+            {requestPrefill
+              ? "Fulfill product request"
+              : "Add product to marketplace"}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -259,7 +261,7 @@ export function AdminProductForm({
               ? "Saving…"
               : requestPrefill
                 ? "Create & notify requester"
-                : "Create product"}
+                : "Add product to marketplace"}
           </Button>
         </CardContent>
       </Card>

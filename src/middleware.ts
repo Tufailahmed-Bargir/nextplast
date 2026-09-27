@@ -21,6 +21,35 @@ const publicExact = new Set([
 
 const publicPrefixes = ["/api/auth", "/api/health", "/marketplace"];
 
+/** Household / shop routes that belong to the USER shell only. */
+const USER_SHELL_PREFIXES = [
+  "/dashboard",
+  "/profile",
+  "/settings",
+  "/notifications",
+  "/search",
+  "/history",
+  "/impact",
+  "/leaderboard",
+  "/sell",
+  "/listings",
+  "/wallet",
+  "/ai",
+  "/cart",
+  "/wishlist",
+  "/checkout",
+  "/orders",
+] as const;
+
+/** Shopping surfaces — collectors/recyclers should not enter these. */
+const SHOP_PREFIXES = [
+  "/marketplace",
+  "/cart",
+  "/wishlist",
+  "/checkout",
+  "/orders",
+] as const;
+
 const isProd = process.env.NODE_ENV === "production";
 
 function isPublic(pathname: string): boolean {
@@ -32,6 +61,44 @@ function isPublic(pathname: string): boolean {
 
 function startsWithPath(pathname: string, base: string): boolean {
   return pathname === base || pathname.startsWith(`${base}/`);
+}
+
+function matchesAnyPrefix(
+  pathname: string,
+  prefixes: readonly string[],
+): boolean {
+  return prefixes.some((p) => startsWithPath(pathname, p));
+}
+
+/**
+ * Keep staff roles inside their own app shell.
+ * /profile maps to the role-specific profile when available.
+ */
+function staffShellRedirect(
+  role: Role,
+  pathname: string,
+): string | null {
+  const hitsUserShell = matchesAnyPrefix(pathname, USER_SHELL_PREFIXES);
+  const hitsShop = matchesAnyPrefix(pathname, SHOP_PREFIXES);
+
+  if (role === UserRole.COLLECTOR) {
+    if (startsWithPath(pathname, "/profile")) return "/collector/profile";
+    if (hitsUserShell || hitsShop) return "/collector";
+    return null;
+  }
+
+  if (role === UserRole.RECYCLER) {
+    if (startsWithPath(pathname, "/profile")) return "/recycler/profile";
+    if (hitsUserShell || hitsShop) return "/recycler";
+    return null;
+  }
+
+  if (role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
+    if (hitsUserShell || hitsShop) return "/admin";
+    return null;
+  }
+
+  return null;
 }
 
 export async function middleware(request: NextRequest) {
@@ -72,13 +139,18 @@ export async function middleware(request: NextRequest) {
         new URL(getRoleHomePath(role), request.url),
       );
     }
-    if (
-      isAuthenticated &&
-      startsWithPath(pathname, "/marketplace") &&
-      !canAccess(role, "marketplace")
-    ) {
-      return NextResponse.redirect(new URL("/unauthorized", request.url));
+
+    // Marketplace is public for guests/users, but staff stay in their shell.
+    if (isAuthenticated && startsWithPath(pathname, "/marketplace")) {
+      const staffHome = staffShellRedirect(role, pathname);
+      if (staffHome) {
+        return NextResponse.redirect(new URL(staffHome, request.url));
+      }
+      if (!canAccess(role, "marketplace")) {
+        return NextResponse.redirect(new URL("/unauthorized", request.url));
+      }
     }
+
     return NextResponse.next();
   }
 
@@ -86,6 +158,12 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Staff roles must not land in the user/shop shell.
+  const staffHome = staffShellRedirect(role, pathname);
+  if (staffHome) {
+    return NextResponse.redirect(new URL(staffHome, request.url));
   }
 
   if (startsWithPath(pathname, "/admin") && !canAccess(role, "admin")) {
@@ -109,7 +187,6 @@ export async function middleware(request: NextRequest) {
 
   if (
     startsWithPath(pathname, "/marketplace") &&
-    isAuthenticated &&
     !canAccess(role, "marketplace")
   ) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
@@ -146,14 +223,6 @@ export async function middleware(request: NextRequest) {
     !canAccess(role, "dashboard")
   ) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
-  }
-
-  // Collectors / recyclers land on role apps, not the household dashboard.
-  if (pathname === "/dashboard" && role === UserRole.COLLECTOR) {
-    return NextResponse.redirect(new URL("/collector", request.url));
-  }
-  if (pathname === "/dashboard" && role === UserRole.RECYCLER) {
-    return NextResponse.redirect(new URL("/recycler", request.url));
   }
 
   if (

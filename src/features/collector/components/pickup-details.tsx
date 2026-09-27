@@ -15,6 +15,8 @@ interface PickupDetailsProps {
   pickupId: string;
   status: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
   scheduledAt?: Date | null;
   distanceKm?: number | null;
   notes?: string | null;
@@ -35,6 +37,8 @@ export function PickupDetails({
   pickupId,
   status,
   address,
+  latitude,
+  longitude,
   scheduledAt,
   distanceKm,
   notes,
@@ -75,7 +79,7 @@ export function PickupDetails({
             ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               <a
-                href={googleMapsSearchUrl(address)}
+                href={googleMapsSearchUrl(address, { latitude, longitude })}
                 target="_blank"
                 rel="noreferrer"
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
@@ -83,7 +87,7 @@ export function PickupDetails({
                 Open in Maps <ExternalLink className="h-3.5 w-3.5" />
               </a>
               <a
-                href={googleMapsDirectionsUrl(address)}
+                href={googleMapsDirectionsUrl(address, { latitude, longitude })}
                 target="_blank"
                 rel="noreferrer"
                 className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}

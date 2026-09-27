@@ -106,7 +106,7 @@ export function DashboardHome({ data }: DashboardHomeProps) {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid items-start gap-4 lg:grid-cols-3">
         <QuickActions />
         <div className="lg:col-span-2">
           <PickupStatusCard

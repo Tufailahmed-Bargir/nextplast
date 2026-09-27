@@ -18,6 +18,7 @@ export default async function AdminLayout({
       title="Admin"
       sidebarTitle="Admin"
       userName={session?.user?.name ?? "Admin"}
+      profileHref="/admin/settings"
     >
       {children}
     </DashboardShell>

@@ -39,19 +39,29 @@ export interface NavItem {
 export const userNavItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: "LayoutDashboard" },
   { title: "Sell Plastic", href: "/sell", icon: "Recycle" },
-  { title: "AI Detection", href: "/ai", icon: "Cpu" },
-  { title: "My Listings", href: "/listings", icon: "ClipboardList" },
+  // Hidden for users — AI runs inside Sell Plastic flow
+  // { title: "AI Detection", href: "/ai", icon: "Cpu" },
+  // Hidden — available via Dashboard Quick Actions
+  // { title: "My Listings", href: "/listings", icon: "ClipboardList" },
   { title: "Marketplace", href: "/marketplace", icon: "Store" },
-  { title: "Cart", href: "/cart", icon: "ShoppingCart" },
-  { title: "Wishlist", href: "/wishlist", icon: "Heart" },
+  // Hidden — available via top header cart icon
+  // { title: "Cart", href: "/cart", icon: "ShoppingCart" },
+  // Hidden — available via top header wishlist icon
+  // { title: "Wishlist", href: "/wishlist", icon: "Heart" },
   { title: "Orders", href: "/orders", icon: "Package" },
   { title: "Wallet", href: "/wallet", icon: "Wallet" },
-  { title: "Impact", href: "/impact", icon: "Leaf" },
-  { title: "History", href: "/history", icon: "History" },
-  { title: "Notifications", href: "/notifications", icon: "Bell" },
-  { title: "Leaderboard", href: "/leaderboard", icon: "Trophy" },
-  { title: "Profile", href: "/profile", icon: "User" },
-  { title: "Settings", href: "/settings", icon: "Settings" },
+  // Hidden — available via Dashboard
+  // { title: "Impact", href: "/impact", icon: "Leaf" },
+  // Hidden — available via Dashboard
+  // { title: "History", href: "/history", icon: "History" },
+  // Hidden — available via top header bell icon
+  // { title: "Notifications", href: "/notifications", icon: "Bell" },
+  // Hidden for users
+  // { title: "Leaderboard", href: "/leaderboard", icon: "Trophy" },
+  // Hidden — available via top header avatar
+  // { title: "Profile", href: "/profile", icon: "User" },
+  // Hidden — available via profile / header
+  // { title: "Settings", href: "/settings", icon: "Settings" },
 ];
 
 /** Admin sidebar */
@@ -66,11 +76,16 @@ export const adminNavItems: NavItem[] = [
   { title: "Products", href: "/admin/products", icon: "Store" },
   { title: "Product Requests", href: "/admin/product-requests", icon: "Bell" },
   { title: "Orders", href: "/admin/orders", icon: "ClipboardList" },
-  { title: "Coin Economy", href: "/admin/coin-economy", icon: "Coins" },
-  { title: "AI Platform", href: "/admin/ai", icon: "Cpu" },
-  { title: "Analytics", href: "/admin/analytics", icon: "BarChart3" },
-  { title: "Reports", href: "/admin/reports", icon: "FileBarChart" },
-  { title: "Settings", href: "/admin/settings", icon: "Settings" },
+  // Hidden from admin sidebar
+  // { title: "Coin Economy", href: "/admin/coin-economy", icon: "Coins" },
+  // Hidden from admin sidebar
+  // { title: "AI Platform", href: "/admin/ai", icon: "Cpu" },
+  // Hidden from admin sidebar
+  // { title: "Analytics", href: "/admin/analytics", icon: "BarChart3" },
+  // Hidden — available via Admin Dashboard
+  // { title: "Reports", href: "/admin/reports", icon: "FileBarChart" },
+  // Hidden — available via top header avatar
+  // { title: "Settings", href: "/admin/settings", icon: "Settings" },
 ];
 
 /** Collector sidebar */

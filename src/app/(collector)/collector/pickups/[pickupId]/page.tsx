@@ -61,6 +61,8 @@ export default async function CollectorPickupDetailPage({ params }: PageProps) {
         pickupId={pickup.id}
         status={pickup.status}
         address={pickup.address}
+        latitude={pickup.latitude != null ? Number(pickup.latitude) : null}
+        longitude={pickup.longitude != null ? Number(pickup.longitude) : null}
         scheduledAt={pickup.scheduledAt}
         distanceKm={pickup.distanceKm ? Number(pickup.distanceKm) : null}
         notes={pickup.notes}

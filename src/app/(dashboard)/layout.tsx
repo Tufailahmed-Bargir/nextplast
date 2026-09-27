@@ -22,6 +22,10 @@ export default async function DashboardLayout({
       title="Dashboard"
       userName={session?.user?.name ?? "User"}
       coinBalance={coinBalance}
+      profileHref="/profile"
+      showMarketplaceLinks
+      showNotifications
+      showSearch
     >
       {children}
     </DashboardShell>
