@@ -88,7 +88,11 @@ export async function callAiDetect(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    logger.error("AI detect failed", { status: response.status, detail }, "ai-client");
+    logger.error(
+      "AI detect failed",
+      { status: response.status, detail },
+      "ai-client",
+    );
     throw new Error("AI_SERVICE_DETECT_FAILED");
   }
 
@@ -146,9 +150,10 @@ export async function getAiServiceStatus(): Promise<AiServiceStatus> {
   }
 
   try {
+    // Generous enough to cover a scale-to-zero cold start on the AI host.
     const [healthRes, versionRes] = await Promise.all([
-      aiFetch("/health", { method: "GET", timeoutMs: 8_000 }),
-      aiFetch("/version", { method: "GET", timeoutMs: 8_000 }),
+      aiFetch("/health", { method: "GET", timeoutMs: 20_000 }),
+      aiFetch("/version", { method: "GET", timeoutMs: 20_000 }),
     ]);
 
     if (!healthRes.ok) {
