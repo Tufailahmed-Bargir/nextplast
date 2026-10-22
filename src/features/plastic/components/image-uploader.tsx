@@ -75,19 +75,24 @@ export function ImageUploader({
       try {
         setProgress("Compressing…");
         const compressed = await Promise.all(files.map(compressImage));
-        setProgress(`Uploading ${compressed.length} image(s)…`);
-        const formData = new FormData();
-        formData.set("listingId", listingId);
-        for (const file of compressed) {
+        // One request per image keeps each body under Vercel's 4.5 MB function limit.
+        let uploaded = 0;
+        for (const [index, file] of compressed.entries()) {
+          setProgress(`Uploading image ${index + 1} of ${compressed.length}…`);
+          const formData = new FormData();
+          formData.set("listingId", listingId);
           formData.append("files", file);
+          const result = await uploadListingImagesAction(formData);
+          if (!result.success) {
+            toast.error(result.error);
+            break;
+          }
+          uploaded += result.data.uploaded;
         }
-        const result = await uploadListingImagesAction(formData);
-        if (!result.success) {
-          toast.error(result.error);
-          return;
+        if (uploaded > 0) {
+          toast.success(`Uploaded ${uploaded} image(s)`);
+          await onChanged();
         }
-        toast.success(`Uploaded ${result.data.uploaded} image(s)`);
-        await onChanged();
       } finally {
         setProgress(null);
         if (inputRef.current) inputRef.current.value = "";
@@ -114,26 +119,26 @@ export function ImageUploader({
         onClick={() => inputRef.current?.click()}
         className={cn(
           "flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 transition-colors",
-          "hover:border-emerald-400 hover:bg-muted/40",
+          "hover:bg-muted/40 hover:border-emerald-400",
           pending && "opacity-70",
         )}
       >
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+        <div className="bg-muted flex h-14 w-14 items-center justify-center rounded-2xl">
           {pending ? (
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <Loader2 className="text-primary h-6 w-6 animate-spin" />
           ) : (
-            <Camera className="h-6 w-6 text-muted-foreground" />
+            <Camera className="text-muted-foreground h-6 w-6" />
           )}
         </div>
         <div className="text-center">
-          <p className="font-medium text-foreground">
+          <p className="text-foreground font-medium">
             {progress ?? "Tap to upload plastic photos"}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             JPEG, PNG, or WEBP · up to 10 MB each · max {MAX_IMAGES_PER_LISTING}
           </p>
         </div>
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+        <span className="text-primary inline-flex items-center gap-2 text-sm font-medium">
           <Upload className="h-4 w-4" /> Choose files
         </span>
       </button>
@@ -151,9 +156,9 @@ export function ImageUploader({
           {images.map((image) => (
             <div
               key={image.id}
-              className="group relative overflow-hidden rounded-xl border border-border"
+              className="group border-border relative overflow-hidden rounded-xl border"
             >
-              <div className="relative aspect-video bg-muted">
+              <div className="bg-muted relative aspect-video">
                 <Image
                   src={image.url}
                   alt="Plastic upload"
@@ -167,7 +172,7 @@ export function ImageUploader({
                 type="button"
                 size="icon-sm"
                 variant="secondary"
-                className="absolute right-2 top-2"
+                className="absolute top-2 right-2"
                 disabled={pending || disabled}
                 onClick={() => removeImage(image.id)}
                 aria-label="Remove image"

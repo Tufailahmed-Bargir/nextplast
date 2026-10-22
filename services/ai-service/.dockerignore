@@ -1,0 +1,12 @@
+.venv
+.env
+.env.example
+__pycache__
+*.pyc
+.pytest_cache
+tests
+.insta
+.agents
+.claude
+.codex
+skills-lock.json
