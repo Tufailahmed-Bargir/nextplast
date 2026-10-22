@@ -1,11 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Check,
   FileText,
+  Loader2,
   Scan,
   Truck,
   Upload,
@@ -15,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ImageUploader } from "@/features/plastic/components/image-uploader";
 import { DetectionSummary } from "@/features/plastic/components/detection-summary";
+import { AiAnalyzingPanel } from "@/features/plastic/components/ai-analyzing-panel";
 import {
   PlasticDetailsForm,
   type CategoryOption,
@@ -73,6 +81,7 @@ export function SellWizard() {
   const [listing, setListing] = useState<ListingPayload | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [pending, startTransition] = useTransition();
+  const [aiRunning, setAiRunning] = useState(false);
   const [detectionEdits, setDetectionEdits] = useState<
     {
       detectionId: string;
@@ -141,7 +150,11 @@ export function SellWizard() {
       if (!options?.resumeStep) return;
 
       // Resume wizard progress for reused DRAFT listings (initial load only).
-      if (data.pickupRequest && data.aiResults.length > 0 && data.items.length > 0) {
+      if (
+        data.pickupRequest &&
+        data.aiResults.length > 0 &&
+        data.items.length > 0
+      ) {
         setStep(6);
       } else if (data.pickupRequest) {
         setStep(5);
@@ -216,15 +229,20 @@ export function SellWizard() {
       toast.error("Upload at least one image first.");
       return;
     }
+    setAiRunning(true);
     startTransition(async () => {
-      const result = await runAiDetectionAction(listingId);
-      if (!result.success) {
-        toast.error(result.error);
-        return;
+      try {
+        const result = await runAiDetectionAction(listingId);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(result.message ?? "AI detection complete");
+        await refreshListing(listingId);
+        goNext();
+      } finally {
+        setAiRunning(false);
       }
-      toast.success(result.message ?? "AI detection complete");
-      await refreshListing(listingId);
-      goNext();
     });
   }
 
@@ -319,10 +337,10 @@ export function SellWizard() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="font-display text-2xl font-bold">Sell Plastic</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Upload photos, verify with AI, schedule pickup, and earn Nature Coins.
         </p>
       </div>
@@ -337,13 +355,18 @@ export function SellWizard() {
               <div
                 className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-xl",
-                  active && "bg-emerald-600 text-white shadow-glow",
-                  done && "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+                  active && "shadow-glow bg-emerald-600 text-white",
+                  done &&
+                    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
                   !active && !done && "bg-muted text-muted-foreground",
                 )}
                 title={item.label}
               >
-                {done ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                {done ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Icon className="h-4 w-4" />
+                )}
               </div>
               {index < STEPS.length - 1 ? (
                 <div
@@ -375,7 +398,7 @@ export function SellWizard() {
                 onChanged={() => refreshListing(listingId)}
                 disabled={pending}
               />
-              <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              <div className="border-border bg-muted/40 text-muted-foreground rounded-xl border p-4 text-sm">
                 Tip: Use good lighting and keep items spread out. Clean, sorted
                 PET can earn a quality bonus.
               </div>
@@ -384,14 +407,17 @@ export function SellWizard() {
 
           {step === 2 ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                AI analyzes your photos for plastic type, quantity estimates, and
-                confidence. Results vary by image quality — not fixed demo data.
+              <p className="text-muted-foreground text-sm">
+                AI analyzes your photos for plastic type, quantity estimates,
+                and confidence. Results vary by image quality — not fixed demo
+                data.
               </p>
-              {detections.length > 0 ? (
+              {aiRunning ? (
+                <AiAnalyzingPanel imageCount={listing?.images.length ?? 0} />
+              ) : detections.length > 0 ? (
                 <DetectionSummary detections={detections} />
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Click below to run detection on your uploaded photos.
                 </p>
               )}
@@ -436,7 +462,7 @@ export function SellWizard() {
           {step === 6 ? (
             <div className="space-y-4">
               <CoinPreviewCard estimatedCoins={estimatedCoins} />
-              <div className="rounded-xl border border-border p-4 text-sm">
+              <div className="border-border rounded-xl border p-4 text-sm">
                 <p>
                   <strong>Weight:</strong>{" "}
                   {(details.claimedWeightGrams / 1000).toFixed(1)} kg ·{" "}
@@ -444,17 +470,18 @@ export function SellWizard() {
                 </p>
                 <p className="mt-2">
                   <strong>Address:</strong>{" "}
-                  {composeAddress(pickup.addressParts) || listing?.pickupAddress}
+                  {composeAddress(pickup.addressParts) ||
+                    listing?.pickupAddress}
                 </p>
-                <p className="mt-2 text-muted-foreground">
-                  Submitting notifies admins for collector assignment. Final coins
-                  are credited after Phase 6 verification.
+                <p className="text-muted-foreground mt-2">
+                  Submitting notifies admins for collector assignment. Final
+                  coins are credited after Phase 6 verification.
                 </p>
               </div>
             </div>
           ) : null}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          <div className="border-border flex flex-wrap items-center justify-between gap-3 border-t pt-4">
             <Button
               type="button"
               variant="ghost"
@@ -474,13 +501,32 @@ export function SellWizard() {
               </Button>
             ) : null}
             {step === 2 ? (
-              <Button type="button" onClick={runAi} disabled={pending}>
-                {detections.length ? "Re-run AI" : "Run AI Detection"}
-                <ArrowRight className="h-4 w-4" />
+              <Button
+                type="button"
+                onClick={runAi}
+                disabled={pending}
+                aria-busy={aiRunning}
+              >
+                {aiRunning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Analyzing…
+                  </>
+                ) : (
+                  <>
+                    {detections.length ? "Re-run AI" : "Run AI Detection"}
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             ) : null}
             {step === 2 && detections.length > 0 ? (
-              <Button type="button" variant="outline" onClick={goNext} disabled={pending}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={goNext}
+                disabled={pending}
+              >
                 Review results
               </Button>
             ) : null}
