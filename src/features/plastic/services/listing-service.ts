@@ -152,7 +152,6 @@ export function serializeSellListing(
           status: listing.pickupRequest.status,
           address: listing.pickupRequest.address,
           scheduledAt: listing.pickupRequest.scheduledAt,
-          arrivedAt: listing.pickupRequest.arrivedAt,
           completedAt: listing.pickupRequest.completedAt,
           notes: listing.pickupRequest.notes,
           latitude: decimalOrNull(listing.pickupRequest.latitude),
