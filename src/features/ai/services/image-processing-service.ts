@@ -17,8 +17,8 @@ const ALLOWED = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 10 * 1024 * 1024;
 
 /**
- * Server-side image validation before proxying to the AI service.
- * Heavy resize/normalize runs in FastAPI; this layer rejects bad inputs early.
+ * Server-side image validation before sending images to Gemini.
+ * Rejects bad inputs early so they never spend model quota.
  */
 export function validateImageBuffer(buffer: Buffer, declaredMime?: string) {
   if (!buffer.length) {

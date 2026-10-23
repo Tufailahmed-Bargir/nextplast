@@ -24,7 +24,7 @@ import { logger } from "@/utils/logger";
 
 /**
  * Authenticated proxy — runs detection for a listing image the user owns.
- * Never exposes the FastAPI service to the browser.
+ * Never exposes the Gemini API key to the browser.
  */
 export async function POST(request: NextRequest) {
   try {

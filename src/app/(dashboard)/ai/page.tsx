@@ -65,7 +65,7 @@ async function UserAiContent({ userId }: { userId: string }) {
               ? status.reachable
                 ? `Online · ${status.modelName ?? "model"} ${status.modelVersion ?? ""}`
                 : "Configured but unreachable — using local fallback"
-              : "AI_SERVICE_URL not set — local image-analysis fallback"}
+              : "GEMINI_API_KEY not set — local image-analysis fallback"}
           </span>
           <Link
             href="/sell"

@@ -163,7 +163,7 @@ export default async function AdminAiPage() {
       <div>
         <h2 className="font-display text-2xl font-bold">AI Platform</h2>
         <p className="text-sm text-muted-foreground">
-          Live YOLOv8 service status and Prisma-backed detection analytics.
+          Live Gemini model status and Prisma-backed detection analytics.
         </p>
       </div>
       <Suspense

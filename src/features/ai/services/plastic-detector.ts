@@ -66,7 +66,7 @@ function mapDecision(value: string): AiDecision {
 }
 
 /**
- * Local image-analysis fallback when the FastAPI service is offline.
+ * Local image-analysis fallback when Gemini is unconfigured or unavailable.
  * Derives detections from real image bytes — not fixed mock payloads.
  */
 async function detectLocalFallback(
@@ -161,7 +161,7 @@ async function detectLocalFallback(
 }
 
 /**
- * Plastic detector — prefers FastAPI YOLOv8 when AI_SERVICE_URL is configured.
+ * Plastic detector — uses Gemini vision when GEMINI_API_KEY is configured.
  */
 export async function detectPlasticInImage(
   input: PlasticDetectorInput,
@@ -172,8 +172,10 @@ export async function detectPlasticInImage(
   if (config.configured) {
     try {
       const remote = await callAiDetect(input.buffer, input.mimeType);
+      const width = remote.image.width || input.width || 0;
+      const height = remote.image.height || input.height || 0;
       // Confirmed qty must match boxes of the dominant class (what the UI badge shows),
-      // not every plastic-mapped box YOLO returned.
+      // not every plastic box the model returned.
       const dominantBoxCount = remote.boxes.filter(
         (b) => b.label === remote.detectedClass,
       ).length;
@@ -181,8 +183,8 @@ export async function detectPlasticInImage(
         dominantBoxCount > 0 ? dominantBoxCount : remote.detectedCount;
       const confidence = calculateOverallConfidence({
         modelConfidence: remote.confidence,
-        imageWidth: remote.image.width,
-        imageHeight: remote.image.height,
+        imageWidth: width || null,
+        imageHeight: height || null,
         imageBytes: remote.image.bytes,
         categoryCertainty:
           remote.boxes.length > 0
@@ -214,12 +216,12 @@ export async function detectPlasticInImage(
         plasticTypes: remote.plasticTypes,
         processingTimeMs: remote.processingTimeMs,
         analysis: {
-          width: remote.image.width,
-          height: remote.image.height,
+          width,
+          height,
           bytes: remote.image.bytes,
           contentHash: remote.image.contentHash || contentHash,
           megapixels: remote.image.megapixels,
-          provider: "yolov8-fastapi",
+          provider: "gemini",
           modelName: remote.modelName,
           modelVersion: remote.modelVersion,
           rawOutput: remote.rawOutput,
