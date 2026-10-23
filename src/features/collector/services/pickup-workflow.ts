@@ -23,10 +23,7 @@ import { ensureCollectorProfile } from "@/features/collector/services/ensure-col
 import { creditNatureCoins } from "@/features/collector/services/wallet-credit";
 import { applyInventoryHandoff } from "@/features/collector/services/inventory-handoff";
 import { applyEnvironmentalImpact } from "@/features/collector/services/impact";
-import {
-  getPickupForCollector,
-  pickupDetailInclude,
-} from "@/features/collector/services/pickup-queries";
+import { getPickupForCollector } from "@/features/collector/services/pickup-queries";
 
 async function assertCollectorOwnsPickup(
   pickupId: string,
