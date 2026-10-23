@@ -60,6 +60,9 @@ export const prisma =
     datasources: {
       db: { url: resolveDatabaseUrl(process.env.DATABASE_URL) },
     },
+    // Neon round trips plus scale-to-zero wake-ups can push a multi-step
+    // transaction past Prisma's 5s default.
+    transactionOptions: { maxWait: 10_000, timeout: 20_000 },
     log:
       process.env.NODE_ENV === "development"
         ? ["error", "warn"]

@@ -123,7 +123,6 @@ export async function assignPickupToCollector(input: {
         otpHash,
         otpFailCount: 0,
       },
-      include: pickupDetailInclude,
     });
 
     if (pickup.listing.status === ListingStatus.APPROVED) {
