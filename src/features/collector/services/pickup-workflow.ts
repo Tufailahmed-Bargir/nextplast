@@ -212,7 +212,6 @@ export async function acceptPickup(input: {
         status: PickupStatus.SCHEDULED,
         acceptedAt: pickup.acceptedAt ?? new Date(),
       },
-      include: pickupDetailInclude,
     });
 
     await tx.notification.create({
@@ -245,7 +244,6 @@ export async function markCollectorArrived(input: {
     const row = await tx.pickupRequest.update({
       where: { id: pickup.id },
       data: { status: PickupStatus.IN_PROGRESS },
-      include: pickupDetailInclude,
     });
 
     await tx.notification.create({
@@ -301,7 +299,6 @@ export async function verifyPickupOtpForCollector(input: {
         acceptedAt: pickup.acceptedAt ?? new Date(),
         otpFailCount: 0,
       },
-      include: pickupDetailInclude,
     });
 
     await redactOtpNotifications(tx, {

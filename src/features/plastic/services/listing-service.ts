@@ -725,12 +725,6 @@ export async function submitListing(input: {
           : ListingStatus.AWAITING_COLLECTOR,
         estimatedCoins,
       },
-      include: {
-        images: true,
-        aiResults: true,
-        items: { include: { category: true } },
-        pickupRequest: true,
-      },
     });
 
     await tx.notification.create({
