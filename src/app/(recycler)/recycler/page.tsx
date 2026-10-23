@@ -6,8 +6,8 @@ import { isAdmin } from "@/utils/roles";
 import { UserRole } from "@/constants/roles";
 import {
   getRecyclerForUser,
+  getRecyclerPurchaseTotals,
   listPlatformLotsForPurchase,
-  listRecyclerPurchases,
 } from "@/features/recycler/services/purchase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -19,10 +19,7 @@ export const metadata: Metadata = { title: "Recycler Dashboard" };
 export default async function RecyclerDashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
-  if (
-    session.user.role !== UserRole.RECYCLER &&
-    !isAdmin(session.user.role)
-  ) {
+  if (session.user.role !== UserRole.RECYCLER && !isAdmin(session.user.role)) {
     redirect("/unauthorized");
   }
 
@@ -31,31 +28,27 @@ export default async function RecyclerDashboardPage() {
     redirect("/unauthorized");
   }
 
-  const [lots, history] = await Promise.all([
+  const [lots, totals] = await Promise.all([
     listPlatformLotsForPurchase(),
-    recycler ? listRecyclerPurchases(recycler.id) : Promise.resolve([]),
+    recycler
+      ? getRecyclerPurchaseTotals(recycler.id)
+      : Promise.resolve({ grams: 0, spentInr: 0 }),
   ]);
-
-  const ownedGrams = history.reduce((s, h) => s + h.quantityGrams, 0);
-  const spentInr = history.reduce(
-    (s, h) => s + Number(h.unitPriceInr ?? 0),
-    0,
-  );
+  const { grams: ownedGrams, spentInr } = totals;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl font-bold">Recycler dashboard</h2>
-          <p className="text-sm text-muted-foreground">
-            {recycler?.companyName ?? "Partner"} · Buy verified plastic lots from
-            NexPlast inventory.
+          <h2 className="font-display text-2xl font-bold">
+            Recycler dashboard
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {recycler?.companyName ?? "Partner"} · Buy verified plastic lots
+            from NexPlast inventory.
           </p>
         </div>
-        <Link
-          href="/recycler/inventory"
-          className={cn(buttonVariants())}
-        >
+        <Link href="/recycler/inventory" className={cn(buttonVariants())}>
           Browse lots
         </Link>
       </div>
@@ -63,7 +56,7 @@ export default async function RecyclerDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">
+            <CardTitle className="text-muted-foreground text-sm">
               Available platform lots
             </CardTitle>
           </CardHeader>
@@ -73,8 +66,8 @@ export default async function RecyclerDashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">
-              Purchased stock (recent)
+            <CardTitle className="text-muted-foreground text-sm">
+              Purchased stock
             </CardTitle>
           </CardHeader>
           <CardContent className="font-display text-3xl font-bold">
@@ -83,7 +76,7 @@ export default async function RecyclerDashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">
+            <CardTitle className="text-muted-foreground text-sm">
               Recorded payments
             </CardTitle>
           </CardHeader>
@@ -97,9 +90,9 @@ export default async function RecyclerDashboardPage() {
         <CardHeader>
           <CardTitle className="text-lg">Status</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground text-sm">
           Verification:{" "}
-          <span className="font-medium text-foreground">
+          <span className="text-foreground font-medium">
             {recycler?.verificationStatus ?? "N/A"}
           </span>
           . Approved recyclers can purchase PLATFORM inventory; stock never goes

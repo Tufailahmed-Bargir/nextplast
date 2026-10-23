@@ -3,7 +3,10 @@ import "server-only";
 import { Prisma, UserRole, WalletTxType } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { prisma } from "@/prisma";
-import { decimalToNumber } from "@/features/dashboard/types";
+import {
+  decimalToNumber,
+  signedWalletAmount,
+} from "@/features/dashboard/types";
 import { writeAdminLog } from "@/features/admin/services/admin-audit";
 import { getSetting } from "@/features/admin/services/app-settings";
 import { SETTING_KEYS } from "@/validations/admin";
@@ -25,7 +28,7 @@ export async function listWalletTransactions(take = 60) {
     id: tx.id,
     type: tx.type,
     status: tx.status,
-    amount: decimalToNumber(tx.amount),
+    amount: signedWalletAmount(tx.type, decimalToNumber(tx.amount)),
     balanceAfter: decimalToNumber(tx.balanceAfter),
     title: tx.title,
     description: tx.description,
@@ -50,10 +53,7 @@ export async function adjustUserWallet(input: {
     select: { id: true, role: true, isActive: true },
   });
   if (!target) throw new Error("USER_NOT_FOUND");
-  if (
-    target.role === UserRole.ADMIN ||
-    target.role === UserRole.SUPER_ADMIN
-  ) {
+  if (target.role === UserRole.ADMIN || target.role === UserRole.SUPER_ADMIN) {
     throw new Error("CANNOT_ADJUST_ADMIN");
   }
 

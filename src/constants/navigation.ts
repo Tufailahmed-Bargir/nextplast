@@ -71,7 +71,11 @@ export const adminNavItems: NavItem[] = [
   { title: "Collectors", href: "/admin/collectors", icon: "Truck" },
   { title: "Recyclers", href: "/admin/recyclers", icon: "Factory" },
   { title: "Listings", href: "/admin/listings", icon: "Recycle" },
-  { title: "Pickup Requests", href: "/admin/pickup-requests", icon: "ClipboardList" },
+  {
+    title: "Pickup Requests",
+    href: "/admin/pickup-requests",
+    icon: "ClipboardList",
+  },
   { title: "Inventory", href: "/admin/inventory", icon: "Package" },
   { title: "Products", href: "/admin/products", icon: "Store" },
   { title: "Product Requests", href: "/admin/product-requests", icon: "Bell" },
@@ -91,10 +95,19 @@ export const adminNavItems: NavItem[] = [
 /** Collector sidebar */
 export const collectorNavItems: NavItem[] = [
   { title: "Dashboard", href: "/collector", icon: "LayoutDashboard" },
-  { title: "Assigned Pickups", href: "/collector/assigned", icon: "ClipboardList" },
+  {
+    title: "Assigned Pickups",
+    href: "/collector/assigned",
+    icon: "ClipboardList",
+  },
   { title: "Navigation", href: "/collector/navigation", icon: "Navigation" },
-  { title: "Completed Pickups", href: "/collector/completed", icon: "CheckCircle2" },
+  {
+    title: "Completed Pickups",
+    href: "/collector/completed",
+    icon: "CheckCircle2",
+  },
   { title: "Pending Verification", href: "/collector/pending", icon: "Clock" },
+  { title: "Notifications", href: "/collector/notifications", icon: "Bell" },
   { title: "Profile", href: "/collector/profile", icon: "User" },
 ];
 
@@ -103,6 +116,7 @@ export const recyclerNavItems: NavItem[] = [
   { title: "Dashboard", href: "/recycler", icon: "LayoutDashboard" },
   { title: "Buy Inventory", href: "/recycler/inventory", icon: "Package" },
   { title: "Purchase History", href: "/recycler/history", icon: "History" },
+  { title: "Notifications", href: "/recycler/notifications", icon: "Bell" },
   { title: "Profile", href: "/recycler/profile", icon: "User" },
 ];
 

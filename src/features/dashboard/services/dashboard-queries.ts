@@ -1,16 +1,12 @@
 import "server-only";
 
-import {
-  format,
-  startOfMonth,
-  subMonths,
-  endOfMonth,
-} from "date-fns";
+import { format, startOfMonth, subMonths, endOfMonth } from "date-fns";
 import { PickupStatus, WalletTxType } from "@prisma/client";
 import { prisma } from "@/prisma";
 import { ensureUserDashboardRecords } from "@/features/dashboard/services/ensure-user-records";
 import {
   decimalToNumber,
+  signedWalletAmount,
   type ActivityItem,
   type ChartPoint,
   type DashboardData,
@@ -57,7 +53,9 @@ function mapNotification(n: {
   };
 }
 
-function monthLabels(count: number): { key: string; label: string; start: Date; end: Date }[] {
+function monthLabels(
+  count: number,
+): { key: string; label: string; start: Date; end: Date }[] {
   const now = new Date();
   const months: { key: string; label: string; start: Date; end: Date }[] = [];
   for (let i = count - 1; i >= 0; i -= 1) {
@@ -181,7 +179,9 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
             estimatedCoins: true,
           },
         },
-        verification: { select: { actualWeightGrams: true, recalculatedCoins: true } },
+        verification: {
+          select: { actualWeightGrams: true, recalculatedCoins: true },
+        },
       },
     }),
     prisma.plasticListing.findMany({
@@ -254,30 +254,37 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     prisma.badge.count({ where: { isActive: true } }),
   ]);
 
-  const [completedListingsForChart, earnTransactionsForChart] = await Promise.all([
-    prisma.plasticListing.findMany({
-      where: {
-        userId,
-        status: "COMPLETED",
-        deletedAt: null,
-        updatedAt: { gte: rangeStart },
-      },
-      select: {
-        updatedAt: true,
-        actualWeightGrams: true,
-        claimedWeightGrams: true,
-      },
-    }),
-    prisma.walletTransaction.findMany({
-      where: {
-        wallet: { userId },
-        type: { in: [WalletTxType.EARN, WalletTxType.BONUS, WalletTxType.PENDING_RELEASE] },
-        status: "COMPLETED",
-        createdAt: { gte: rangeStart },
-      },
-      select: { createdAt: true, amount: true },
-    }),
-  ]);
+  const [completedListingsForChart, earnTransactionsForChart] =
+    await Promise.all([
+      prisma.plasticListing.findMany({
+        where: {
+          userId,
+          status: "COMPLETED",
+          deletedAt: null,
+          updatedAt: { gte: rangeStart },
+        },
+        select: {
+          updatedAt: true,
+          actualWeightGrams: true,
+          claimedWeightGrams: true,
+        },
+      }),
+      prisma.walletTransaction.findMany({
+        where: {
+          wallet: { userId },
+          type: {
+            in: [
+              WalletTxType.EARN,
+              WalletTxType.BONUS,
+              WalletTxType.PENDING_RELEASE,
+            ],
+          },
+          status: "COMPLETED",
+          createdAt: { gte: rangeStart },
+        },
+        select: { createdAt: true, amount: true },
+      }),
+    ]);
 
   const walletSummary: WalletSummary = {
     availableBalance: decimalToNumber(wallet.availableBalance),
@@ -363,12 +370,10 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
 
   const userRankEntry = leaderboard.find((e) => e.isCurrentUser);
   const userRank =
-    userRankRow?.rank ??
-    userRankEntry?.rank ??
-    impact.rankCache ??
-    null;
+    userRankRow?.rank ?? userRankEntry?.rank ?? impact.rankCache ?? null;
 
-  const mappedNotifications: NotificationItem[] = notifications.map(mapNotification);
+  const mappedNotifications: NotificationItem[] =
+    notifications.map(mapNotification);
 
   const activities: ActivityItem[] = [
     ...recentTransactions.map((t) => ({
@@ -377,7 +382,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       title: t.title ?? t.type,
       detail: t.description ?? t.status,
       at: t.createdAt,
-      coins: decimalToNumber(t.amount),
+      coins: signedWalletAmount(t.type, decimalToNumber(t.amount)),
     })),
     ...recentPickups.map((p) => ({
       id: `pickup-${p.id}`,
@@ -504,7 +509,9 @@ export async function getNotificationsPageData(userId: string) {
   ]);
 
   return {
-    notifications: notifications.map(mapNotification) satisfies NotificationItem[],
+    notifications: notifications.map(
+      mapNotification,
+    ) satisfies NotificationItem[],
     unread,
   };
 }
@@ -614,7 +621,7 @@ export async function getHistoryPageData(userId: string) {
       title: t.title ?? t.type,
       detail: t.description ?? t.status,
       at: t.createdAt,
-      coins: t.amount,
+      coins: signedWalletAmount(t.type, t.amount),
     })),
     ...mappedPickups.map((p) => ({
       id: `pickup-${p.id}`,

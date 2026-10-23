@@ -19,6 +19,8 @@ export default async function CollectorLayout({
       sidebarTitle="Collector"
       userName={session?.user?.name ?? "Collector"}
       profileHref="/collector/profile"
+      showNotifications
+      notificationsHref="/collector/notifications"
     >
       {children}
     </DashboardShell>

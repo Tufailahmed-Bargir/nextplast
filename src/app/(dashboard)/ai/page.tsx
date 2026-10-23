@@ -67,10 +67,7 @@ async function UserAiContent({ userId }: { userId: string }) {
                 : "Configured but unreachable — using local fallback"
               : "GEMINI_API_KEY not set — local image-analysis fallback"}
           </span>
-          <Link
-            href="/sell"
-            className={cn(buttonVariants({ size: "sm" }))}
-          >
+          <Link href="/sell" className={cn(buttonVariants({ size: "sm" }))}>
             Run detection on a listing
           </Link>
         </CardContent>
@@ -90,9 +87,12 @@ async function UserAiContent({ userId }: { userId: string }) {
 
       {detections.length === 0 ? (
         <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          <CardContent className="text-muted-foreground py-10 text-center text-sm">
             No AI results yet. Start from{" "}
-            <Link href="/sell" className="font-medium text-emerald-700 underline">
+            <Link
+              href="/sell"
+              className="font-medium text-emerald-700 underline"
+            >
               Sell Plastic
             </Link>{" "}
             to upload photos and run detection.
@@ -116,7 +116,7 @@ async function UserAiContent({ userId }: { userId: string }) {
                     boxes={d.boxes ?? []}
                   />
                 ) : (
-                  <div className="rounded-xl border border-dashed border-border p-8 text-sm text-muted-foreground">
+                  <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-sm">
                     Image unavailable
                   </div>
                 )}
@@ -124,6 +124,7 @@ async function UserAiContent({ userId }: { userId: string }) {
                   <DetectionResultCard
                     detectedClass={d.detectedClass}
                     detectedCount={d.detectedCount}
+                    userConfirmedCount={d.userConfirmedCount}
                     confidence={d.confidence}
                     decision={d.decision}
                     estimatedWeightGrams={d.estimatedWeightGrams}
@@ -149,11 +150,12 @@ export default async function UserAiPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold">AI Detection</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Review plastic detections, confidence, and personalized recommendations.
+        <p className="text-muted-foreground mt-1 text-sm">
+          Review plastic detections, confidence, and personalized
+          recommendations.
         </p>
       </div>
       <Suspense

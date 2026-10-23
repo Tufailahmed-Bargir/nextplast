@@ -32,6 +32,20 @@ export async function listPlatformLotsForPurchase() {
   });
 }
 
+export async function getRecyclerPurchaseTotals(recyclerId: string) {
+  const totals = await prisma.inventoryMovement.aggregate({
+    where: {
+      type: InventoryMovementType.IN,
+      inventory: { recyclerId },
+    },
+    _sum: { quantityGrams: true, unitPriceInr: true },
+  });
+  return {
+    grams: totals._sum.quantityGrams ?? 0,
+    spentInr: Number(totals._sum.unitPriceInr ?? 0),
+  };
+}
+
 export async function listRecyclerPurchases(recyclerId: string) {
   return prisma.inventoryMovement.findMany({
     where: {
@@ -81,6 +95,12 @@ export async function purchaseInventoryLot(input: {
     if (!platformLot || platformLot.ownerType !== InventoryOwnerType.PLATFORM) {
       throw new Error("LOT_NOT_FOUND");
     }
+    if (
+      platformLot.status !== InventoryStatus.IN_STOCK &&
+      platformLot.status !== InventoryStatus.RESERVED
+    ) {
+      throw new Error("LOT_NOT_AVAILABLE");
+    }
     if (platformLot.quantityGrams < input.quantityGrams) {
       throw new Error("INSUFFICIENT_STOCK");
     }
@@ -89,19 +109,22 @@ export async function purchaseInventoryLot(input: {
       ((input.quantityGrams / 1000) * input.unitPriceInrPerKg).toFixed(2),
     );
 
+    // Decrement is atomic on the committed row; status must come from the
+    // post-decrement quantity, not the pre-lock read used above.
     const updatedPlatform = await tx.inventory.update({
       where: { id: platformLot.id },
-      data: {
-        quantityGrams: { decrement: input.quantityGrams },
-        status:
-          platformLot.quantityGrams - input.quantityGrams <= 0
-            ? InventoryStatus.DEPLETED
-            : InventoryStatus.IN_STOCK,
-      },
+      data: { quantityGrams: { decrement: input.quantityGrams } },
     });
 
     if (updatedPlatform.quantityGrams < 0) {
       throw new Error("INSUFFICIENT_STOCK");
+    }
+
+    if (updatedPlatform.quantityGrams === 0) {
+      await tx.inventory.update({
+        where: { id: platformLot.id },
+        data: { status: InventoryStatus.DEPLETED },
+      });
     }
 
     await tx.inventoryMovement.create({

@@ -6,6 +6,7 @@ import { RiskBadge } from "@/features/ai/components/risk-badge";
 interface DetectionResultCardProps {
   detectedClass: string;
   detectedCount: number;
+  userConfirmedCount?: number | null;
   confidence: number;
   decision: string;
   estimatedWeightGrams?: number | null;
@@ -17,6 +18,7 @@ interface DetectionResultCardProps {
 export function DetectionResultCard({
   detectedClass,
   detectedCount,
+  userConfirmedCount,
   confidence,
   decision,
   estimatedWeightGrams,
@@ -37,8 +39,15 @@ export function DetectionResultCard({
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary">Count {detectedCount}</Badge>
-          <Badge variant="outline">{decision.toLowerCase().replaceAll("_", " ")}</Badge>
+          <Badge variant="secondary">
+            Confirmed {userConfirmedCount ?? detectedCount}
+          </Badge>
+          {(userConfirmedCount ?? detectedCount) !== detectedCount ? (
+            <Badge variant="outline">AI {detectedCount}</Badge>
+          ) : null}
+          <Badge variant="outline">
+            {decision.toLowerCase().replaceAll("_", " ")}
+          </Badge>
           {estimatedWeightGrams != null ? (
             <Badge variant="outline">~{estimatedWeightGrams} g preview</Badge>
           ) : null}

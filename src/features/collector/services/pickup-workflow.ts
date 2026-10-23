@@ -12,7 +12,7 @@ import { logger } from "@/utils/logger";
 import { uploadImage } from "@/utils/upload";
 import { resolveImageMime } from "@/utils/image-mime";
 import { estimateNatureCoins } from "@/features/plastic/services/coin-estimate";
-import { MAX_IMAGE_BYTES } from "@/validations/collector";
+import { MAX_IMAGE_BYTES, MAX_OTP_ATTEMPTS } from "@/validations/collector";
 import {
   generatePickupOtp,
   hashPickupOtp,
@@ -25,11 +25,11 @@ import { applyInventoryHandoff } from "@/features/collector/services/inventory-h
 import { applyEnvironmentalImpact } from "@/features/collector/services/impact";
 import { getPickupForCollector } from "@/features/collector/services/pickup-queries";
 
-async function assertCollectorOwnsPickup(
-  pickupId: string,
-  userId: string,
-) {
+async function assertCollectorOwnsPickup(pickupId: string, userId: string) {
   const collector = await ensureCollectorProfile(userId);
+  if (collector.verificationStatus !== ProfileVerificationStatus.APPROVED) {
+    throw new Error("COLLECTOR_NOT_APPROVED");
+  }
   const pickup = await getPickupForCollector(pickupId, collector.id);
   if (!pickup) {
     throw new Error("PICKUP_NOT_FOUND");
@@ -37,10 +37,7 @@ async function assertCollectorOwnsPickup(
   return { collector, pickup };
 }
 
-function assertStatus(
-  status: PickupStatus,
-  allowed: readonly PickupStatus[],
-) {
+function assertStatus(status: PickupStatus, allowed: readonly PickupStatus[]) {
   if (!allowed.includes(status)) {
     throw new Error("INVALID_PICKUP_STATE");
   }
@@ -50,22 +47,17 @@ async function redactOtpNotifications(
   tx: Prisma.TransactionClient,
   input: { userId: string; pickupId: string },
 ) {
-  const notifications = await tx.notification.findMany({
-    where: { userId: input.userId, type: "PICKUP" },
-    select: { id: true, body: true, data: true },
+  await tx.notification.updateMany({
+    where: {
+      userId: input.userId,
+      type: "PICKUP",
+      body: { contains: "OTP" },
+      data: { path: ["pickupId"], equals: input.pickupId },
+    },
+    data: {
+      body: "Your pickup OTP was verified and is no longer shown.",
+    },
   });
-
-  for (const notification of notifications) {
-    const data = notification.data as { pickupId?: string } | null;
-    if (data?.pickupId !== input.pickupId) continue;
-    if (!/OTP/i.test(notification.body)) continue;
-    await tx.notification.update({
-      where: { id: notification.id },
-      data: {
-        body: "Your pickup OTP was verified and is no longer shown.",
-      },
-    });
-  }
 }
 
 /**
@@ -197,9 +189,7 @@ export async function acceptPickup(input: {
     input.pickupId,
     input.userId,
   );
-  if (
-    pickup.status !== PickupStatus.ASSIGNED
-  ) {
+  if (pickup.status !== PickupStatus.ASSIGNED) {
     throw new Error("INVALID_PICKUP_STATE");
   }
 
@@ -277,34 +267,41 @@ export async function verifyPickupOtpForCollector(input: {
     throw new Error("OTP_LOCKED");
   }
 
+  // Reserve the attempt atomically before comparing, so parallel guesses
+  // cannot all pass the stale-count check and exceed MAX_OTP_ATTEMPTS.
+  const reserved = await prisma.pickupRequest.updateMany({
+    where: {
+      id: pickup.id,
+      status: PickupStatus.IN_PROGRESS,
+      otpFailCount: { lt: MAX_OTP_ATTEMPTS },
+    },
+    data: { otpFailCount: { increment: 1 } },
+  });
+  if (reserved.count === 0) {
+    throw new Error("OTP_LOCKED");
+  }
+
   if (!verifyPickupOtp(input.otp, pickup.otpHash)) {
-    const nextFails = pickup.otpFailCount + 1;
-    await prisma.pickupRequest.update({
-      where: { id: pickup.id },
-      data: { otpFailCount: nextFails },
-    });
-    if (isOtpLocked(nextFails)) {
-      throw new Error("OTP_LOCKED");
-    }
     throw new Error("INVALID_OTP");
   }
 
   return prisma.$transaction(async (tx) => {
-    const row = await tx.pickupRequest.update({
-      where: { id: pickup.id },
+    const { count } = await tx.pickupRequest.updateMany({
+      where: { id: pickup.id, status: PickupStatus.IN_PROGRESS },
       data: {
         status: PickupStatus.AWAITING_VERIFICATION,
         acceptedAt: pickup.acceptedAt ?? new Date(),
         otpFailCount: 0,
       },
     });
+    if (count === 0) {
+      throw new Error("INVALID_PICKUP_STATE");
+    }
 
     await redactOtpNotifications(tx, {
       userId: pickup.listing.userId,
       pickupId: pickup.id,
     });
-
-    return row;
   });
 }
 
@@ -443,11 +440,6 @@ export async function completePickupVerification(input: {
       data: { completedPickups: { increment: 1 } },
     });
 
-    await redactOtpNotifications(tx, {
-      userId: pickup.listing.userId,
-      pickupId: pickup.id,
-    });
-
     await tx.notification.createMany({
       data: [
         {
@@ -495,8 +487,6 @@ export async function completePickupVerification(input: {
     },
     "collector",
   );
-
-  return getPickupForCollector(pickup.id, collector.id);
 }
 
 export async function setCollectorDuty(input: {

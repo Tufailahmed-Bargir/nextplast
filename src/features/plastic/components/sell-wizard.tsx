@@ -71,6 +71,55 @@ type ListingPayload = NonNullable<
   >["data"]
 >;
 
+/** Category for the plastic type with the most confirmed items in the AI review. */
+/** Typical resin for each detection label, used when an item has no resin code. */
+const LABEL_RESIN: Record<string, string> = {
+  "PET BOTTLE": "PET",
+  "HDPE BOTTLE": "HDPE",
+  "PLASTIC BAG": "LDPE",
+  "MILK PACKET": "LDPE",
+  CONTAINER: "PP",
+  "BOTTLE CAP": "PP",
+  BUCKET: "HDPE",
+  CUP: "PS",
+  PVC: "PVC",
+};
+
+function dominantCategoryId(
+  aiResults: ListingPayload["aiResults"],
+  cats: CategoryOption[],
+): string | undefined {
+  const totals = new Map<string, number>();
+  const add = (resin: string, count: number) =>
+    totals.set(resin, (totals.get(resin) ?? 0) + count);
+  for (const row of aiResults) {
+    const boxes =
+      (row.rawPayload as { boxes?: { label: string; resin?: string }[] } | null)
+        ?.boxes ?? [];
+    if (boxes.length > 0) {
+      for (const box of boxes) {
+        const label = box.label.toUpperCase();
+        add(box.resin ?? LABEL_RESIN[label] ?? label, 1);
+      }
+      continue;
+    }
+    const label = (row.userConfirmedClass ?? row.detectedClass).toUpperCase();
+    add(
+      LABEL_RESIN[label] ?? label,
+      row.userConfirmedCount ?? row.detectedCount,
+    );
+  }
+  let dominant: string | undefined;
+  let best = -1;
+  for (const [resin, count] of totals) {
+    if (count > best) {
+      dominant = resin;
+      best = count;
+    }
+  }
+  return cats.find((c) => c.resinType.toUpperCase() === dominant)?.id;
+}
+
 /**
  * Six-step Sell Plastic wizard — upload → AI → review → details → pickup → submit.
  */
@@ -78,6 +127,8 @@ export function SellWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [listingId, setListingId] = useState<string | null>(null);
+  const [startFailed, setStartFailed] = useState(false);
+  const [startAttempt, setStartAttempt] = useState(0);
   const [listing, setListing] = useState<ListingPayload | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [pending, startTransition] = useTransition();
@@ -125,7 +176,11 @@ export function SellWizard() {
       setDetails((prev) => ({
         quality: data.quality,
         claimedWeightGrams: data.claimedWeightGrams ?? prev.claimedWeightGrams,
-        categoryId: firstItem?.categoryId ?? cats[0]?.id ?? prev.categoryId,
+        categoryId:
+          firstItem?.categoryId ??
+          dominantCategoryId(data.aiResults, cats) ??
+          cats[0]?.id ??
+          prev.categoryId,
         claimedQuantity: firstItem?.claimedQuantity ?? prev.claimedQuantity,
         notes: data.notes ?? "",
       }));
@@ -180,6 +235,7 @@ export function SellWizard() {
       setCategories(cats);
       if (!started.success) {
         toast.error(started.error);
+        setStartFailed(true);
         return;
       }
       setListingId(started.data.listingId);
@@ -190,7 +246,7 @@ export function SellWizard() {
     return () => {
       active = false;
     };
-  }, [hydrateFromListing]);
+  }, [hydrateFromListing, startAttempt]);
 
   const refreshListing = useCallback(
     async (id: string) => {
@@ -214,6 +270,14 @@ export function SellWizard() {
   const detections = listing
     ? mapListingDetections(listing.aiResults, listing.images)
     : [];
+  // Item quantity follows the confirmed review so the two never disagree.
+  // A confirmed total of 0 is a real answer, so only the absence of a review falls back.
+  const hasReview = detections.length > 0;
+  const confirmedQuantity = detections.reduce(
+    (sum, d) => sum + (d.userConfirmedCount ?? d.detectedCount),
+    0,
+  );
+  const itemQuantity = hasReview ? confirmedQuantity : details.claimedQuantity;
 
   function goNext() {
     setStep((s) => Math.min(6, s + 1));
@@ -278,7 +342,7 @@ export function SellWizard() {
         items: [
           {
             categoryId: details.categoryId,
-            claimedQuantity: details.claimedQuantity,
+            claimedQuantity: itemQuantity,
             claimedWeightGrams: details.claimedWeightGrams,
           },
         ],
@@ -386,6 +450,34 @@ export function SellWizard() {
           <CardTitle>{STEPS[step - 1]?.label}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {step === 1 && !listingId ? (
+            startFailed ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <p className="text-muted-foreground text-sm">
+                  We couldn&apos;t start your listing.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setStartFailed(false);
+                    setStartAttempt((n) => n + 1);
+                  }}
+                >
+                  Try again
+                </Button>
+              </div>
+            ) : (
+              <div
+                role="status"
+                className="text-muted-foreground flex items-center justify-center gap-2 py-10 text-sm"
+              >
+                <Loader2 className="text-primary h-5 w-5 animate-spin" />
+                Preparing your listing…
+              </div>
+            )
+          ) : null}
+
           {step === 1 && listingId ? (
             <>
               <ImageUploader
@@ -439,6 +531,7 @@ export function SellWizard() {
                   categories={categories}
                   value={details}
                   onChange={setDetails}
+                  confirmedQuantity={hasReview ? confirmedQuantity : undefined}
                 />
               </div>
               <CoinPreviewCard estimatedCoins={estimatedCoins} />

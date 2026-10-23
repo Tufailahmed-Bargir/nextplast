@@ -16,23 +16,25 @@ import {
   createUserWithPassword,
   resetPasswordWithToken,
 } from "@/features/auth/services/user-service";
-import {
-  AuthHttpError,
-  requireAdmin,
-} from "@/features/auth/services/guards";
+import { AuthHttpError, requireAdmin } from "@/features/auth/services/guards";
 import { getRoleHomePath } from "@/utils/roles";
 import { logger } from "@/utils/logger";
+import { appConfig } from "@/config/app";
+import { sendTemplatedEmail } from "@/services/email/email-service";
 import type { UserRole } from "@/constants/roles";
 
 export type ActionResult =
-  | { success: true; message?: string; redirectTo?: string; resetToken?: string }
+  | {
+      success: true;
+      message?: string;
+      redirectTo?: string;
+      resetToken?: string;
+    }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
-function zodFieldErrors(
-  error: {
-    flatten: () => { fieldErrors: Record<string, string[] | undefined> };
-  },
-): Record<string, string[]> {
+function zodFieldErrors(error: {
+  flatten: () => { fieldErrors: Record<string, string[] | undefined> };
+}): Record<string, string[]> {
   const flat = error.flatten().fieldErrors;
   const result: Record<string, string[]> = {};
   for (const [key, value] of Object.entries(flat)) {
@@ -147,6 +149,22 @@ export async function loginAction(raw: unknown): Promise<ActionResult> {
   }
 }
 
+/** Emails the reset link; failures are logged, never surfaced, so account existence stays hidden. */
+async function deliverPasswordResetEmail(email: string, rawToken: string) {
+  const query = new URLSearchParams({ email, token: rawToken });
+  try {
+    await sendTemplatedEmail("password-reset", email, {
+      resetUrl: `${appConfig.url}/reset-password?${query.toString()}`,
+    });
+  } catch (error) {
+    logger.error(
+      "Password reset email failed",
+      { error: error instanceof Error ? error.message : "unknown" },
+      "auth",
+    );
+  }
+}
+
 export async function forgotPasswordAction(
   raw: unknown,
 ): Promise<ActionResult> {
@@ -161,6 +179,9 @@ export async function forgotPasswordAction(
 
   try {
     const result = await createPasswordResetToken(parsed.data.email);
+    if (result) {
+      await deliverPasswordResetEmail(parsed.data.email, result.rawToken);
+    }
     const payload: ActionResult = {
       success: true,
       message:
@@ -191,9 +212,7 @@ export async function forgotPasswordAction(
   }
 }
 
-export async function resetPasswordAction(
-  raw: unknown,
-): Promise<ActionResult> {
+export async function resetPasswordAction(raw: unknown): Promise<ActionResult> {
   const parsed = resetPasswordSchema.safeParse(raw);
   if (!parsed.success) {
     return {

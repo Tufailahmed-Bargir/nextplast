@@ -27,14 +27,15 @@ export function BoundingBoxViewer({
   className,
 }: BoundingBoxViewerProps) {
   return (
-    <div className={cn("relative w-full overflow-hidden rounded-xl bg-muted", className)}>
+    <div
+      className={cn(
+        "bg-muted relative w-full overflow-hidden rounded-xl",
+        className,
+      )}
+    >
       {/* Native img: wrapper height follows image aspect → box % coords stay correct */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imageUrl}
-        alt={alt}
-        className="block h-auto w-full"
-      />
+      <img src={imageUrl} alt={alt} className="block h-auto w-full" />
       {boxes.map((box, i) => (
         <div
           key={`${box.label}-${i}`}
@@ -46,8 +47,18 @@ export function BoundingBoxViewer({
             height: `${box.h * 100}%`,
           }}
         >
-          <span className="absolute -top-6 left-0 rounded-md bg-emerald-500 px-2 py-0.5 text-xs font-semibold text-white">
-            {box.label} {Math.round(box.confidence * 100)}%
+          {/* Boxes touching the top edge keep their label inside so it isn't clipped. */}
+          <span
+            className={cn(
+              "absolute left-0 rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] leading-tight font-semibold whitespace-nowrap text-white sm:px-2 sm:text-xs",
+              box.y < 0.08 ? "top-0" : "-top-5 sm:-top-6",
+            )}
+          >
+            {box.label}
+            <span className="hidden sm:inline">
+              {" "}
+              {Math.round(box.confidence * 100)}%
+            </span>
           </span>
         </div>
       ))}

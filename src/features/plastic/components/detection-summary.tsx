@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { BoundingBoxViewer } from "@/features/ai/components/bounding-box-viewer";
+import { AiItemSummary } from "@/features/plastic/components/ai-item-summary";
 
 export interface DetectionView {
   id: string;
@@ -26,7 +27,10 @@ export interface DetectionView {
     h: number;
     label: string;
     confidence: number;
+    resin?: string;
   }[];
+  summary?: string | null;
+  estimatedWeightGrams?: number | null;
   fraudAlerts?: { code: string; message: string; severity: string }[];
 }
 
@@ -48,12 +52,10 @@ function buildEdits(detections: DetectionView[]): EditMap {
   return Object.fromEntries(
     detections.map((d) => {
       const className = d.userConfirmedClass ?? d.detectedClass;
-      // Prefer counting green boxes of the shown class so qty matches the overlay.
-      const boxCount =
-        d.boxes?.filter((b) => b.label === className).length ?? 0;
+      // Every box on the overlay is one item, across all plastic types.
+      const boxCount = d.boxes?.length ?? 0;
       const count =
-        d.userConfirmedCount ??
-        (boxCount > 0 ? boxCount : d.detectedCount);
+        d.userConfirmedCount ?? (boxCount > 0 ? boxCount : d.detectedCount);
       return [
         d.id,
         {
@@ -97,9 +99,7 @@ export function DetectionSummary({
 
   const avgConfidence = useMemo(() => {
     if (detections.length === 0) return 0;
-    return (
-      detections.reduce((s, d) => s + d.confidence, 0) / detections.length
-    );
+    return detections.reduce((s, d) => s + d.confidence, 0) / detections.length;
   }, [detections]);
 
   const alerts = detections.flatMap((d) => d.fraudAlerts ?? []);
@@ -116,7 +116,7 @@ export function DetectionSummary({
 
   if (detections.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         Run AI detection to see plastic types, counts, and confidence scores.
       </p>
     );
@@ -142,79 +142,90 @@ export function DetectionSummary({
       {alerts.length > 0 ? (
         <ul className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40">
           {alerts.map((alert, i) => (
-            <li key={`${alert.code}-${i}`} className="text-amber-800 dark:text-amber-200">
+            <li
+              key={`${alert.code}-${i}`}
+              className="text-amber-800 dark:text-amber-200"
+            >
               <strong>{alert.code}</strong>: {alert.message}
             </li>
           ))}
         </ul>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-4">
         {detections.map((detection) => (
-          <div
-            key={detection.id}
-            className="overflow-hidden rounded-xl border border-border"
-          >
-            {detection.imageUrl ? (
-              <BoundingBoxViewer
-                imageUrl={detection.imageUrl}
-                boxes={(detection.boxes ?? []).filter(
-                  (b) =>
-                    b.label ===
-                    (edits[detection.id]?.className ?? detection.detectedClass),
-                )}
-              />
-            ) : null}
-            <div className="space-y-3 p-4">
-              <div className="flex flex-wrap gap-2 text-sm">
-                <Badge variant="secondary">{detection.detectedClass}</Badge>
-                <span className="text-muted-foreground">
-                  AI count: {detection.detectedCount}
-                </span>
-                <span className="text-muted-foreground">
-                  {Math.round(detection.confidence * 100)}% ·{" "}
-                  {detection.decision.toLowerCase()}
-                </span>
-              </div>
-              {editable ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor={`class-${detection.id}`}>Confirmed type</Label>
-                    <Input
-                      id={`class-${detection.id}`}
-                      value={edits[detection.id]?.className ?? ""}
-                      onChange={(e) =>
-                        updateEdit(detection.id, { className: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor={`count-${detection.id}`}>Confirmed qty</Label>
-                    <Input
-                      id={`count-${detection.id}`}
-                      type="number"
-                      min={0}
-                      value={edits[detection.id]?.count ?? 0}
-                      onChange={(e) =>
-                        updateEdit(detection.id, {
-                          count: Number(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </div>
+          <div key={detection.id} className="grid gap-4 lg:grid-cols-2">
+            <div className="border-border overflow-hidden rounded-xl border">
+              {detection.imageUrl ? (
+                <BoundingBoxViewer
+                  imageUrl={detection.imageUrl}
+                  boxes={detection.boxes ?? []}
+                />
+              ) : null}
+              <div className="space-y-3 p-4">
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <Badge variant="secondary">{detection.detectedClass}</Badge>
+                  <span className="text-muted-foreground">
+                    AI count: {detection.detectedCount}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {Math.round(detection.confidence * 100)}% ·{" "}
+                    {detection.decision.toLowerCase()}
+                  </span>
                 </div>
-              ) : (
-                <p
-                  className={cn(
-                    "text-sm",
-                    detection.matchedClaimed === false && "text-amber-600",
-                  )}
-                >
-                  Confirmed: {detection.userConfirmedClass ?? detection.detectedClass}{" "}
-                  × {detection.userConfirmedCount ?? detection.detectedCount}
-                </p>
-              )}
+                {editable ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`class-${detection.id}`}>
+                        Confirmed type
+                      </Label>
+                      <Input
+                        id={`class-${detection.id}`}
+                        value={edits[detection.id]?.className ?? ""}
+                        onChange={(e) =>
+                          updateEdit(detection.id, {
+                            className: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`count-${detection.id}`}>
+                        Confirmed qty
+                      </Label>
+                      <Input
+                        id={`count-${detection.id}`}
+                        type="number"
+                        min={0}
+                        value={edits[detection.id]?.count ?? 0}
+                        onChange={(e) =>
+                          updateEdit(detection.id, {
+                            count: Number(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p
+                    className={cn(
+                      "text-sm",
+                      detection.matchedClaimed === false && "text-amber-600",
+                    )}
+                  >
+                    Confirmed:{" "}
+                    {detection.userConfirmedClass ?? detection.detectedClass} ×{" "}
+                    {detection.userConfirmedCount ?? detection.detectedCount}
+                  </p>
+                )}
+              </div>
             </div>
+            <AiItemSummary
+              summary={detection.summary}
+              boxes={detection.boxes ?? []}
+              totalCount={detection.boxes?.length || detection.detectedCount}
+              estimatedWeightGrams={detection.estimatedWeightGrams}
+            />
           </div>
         ))}
       </div>

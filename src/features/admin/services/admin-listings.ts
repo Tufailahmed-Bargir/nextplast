@@ -85,6 +85,12 @@ export async function reviewPlasticListing(input: {
     include: { pickupRequest: { select: { id: true, status: true } } },
   });
   if (!listing) throw new Error("LISTING_NOT_FOUND");
+  if (
+    listing.status === ListingStatus.COMPLETED ||
+    listing.status === ListingStatus.CANCELLED
+  ) {
+    throw new Error("LISTING_NOT_REVIEWABLE");
+  }
 
   let nextStatus: ListingStatus = listing.status;
   if (input.decision === "APPROVE") {
@@ -143,7 +149,9 @@ export async function reviewPlasticListing(input: {
         nextStatus,
         notes: input.notes ?? null,
         cancelledPickupId:
-          input.decision === "REJECT" ? listing.pickupRequest?.id ?? null : null,
+          input.decision === "REJECT"
+            ? (listing.pickupRequest?.id ?? null)
+            : null,
       },
     });
 

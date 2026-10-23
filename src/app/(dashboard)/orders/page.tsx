@@ -21,7 +21,7 @@ export default async function OrdersPage() {
       <div>
         <h1 className="font-display text-2xl font-bold">Your orders</h1>
         <p className="text-sm text-muted-foreground">
-          Marketplace order history from Prisma.
+          Your marketplace purchases and their delivery status.
         </p>
       </div>
       {orders.length === 0 ? (

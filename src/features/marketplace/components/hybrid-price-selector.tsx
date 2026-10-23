@@ -39,6 +39,8 @@ export function HybridPriceSelector({
 }: HybridPriceSelectorProps) {
   const maxUseful = maxCoinsForCashTotal(merchandiseInr);
   const maxRedeemable = Math.min(maxUseful, walletBalance, listCoins);
+  // Same clamp the server applies, so the label, slider and preview agree.
+  const coinsToRedeem = Math.min(value.coinsToRedeem, maxRedeemable);
 
   const preview = useMemo(() => {
     try {
@@ -115,17 +117,17 @@ export function HybridPriceSelector({
             <div className="mb-1 flex items-center gap-2 font-semibold">
               <CoinIcon className="h-5 w-5" /> Pay with Nature Coins
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Wallet: {formatCoin(walletBalance)} · Products:{" "}
               {formatCoin(listCoins)} coins
             </p>
             {shippingInr > 0 ? (
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-sm">
                 Shipping {formatInr(shippingInr)} is paid in cash.
               </p>
             ) : null}
             {walletBalance < listCoins ? (
-              <p className="mt-2 text-sm text-destructive">
+              <p className="text-destructive mt-2 text-sm">
                 Insufficient coins — choose cash or hybrid.
               </p>
             ) : null}
@@ -133,9 +135,9 @@ export function HybridPriceSelector({
         ) : null}
 
         {value.mode === "CASH" ? (
-          <div className="rounded-xl border border-border bg-muted/40 p-4">
+          <div className="border-border bg-muted/40 rounded-xl border p-4">
             <p className="font-semibold">Pay with cash / UPI</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Total due: {formatInr(merchandiseInr + shippingInr)}{" "}
               (gateway-ready via PaymentProvider)
             </p>
@@ -148,7 +150,7 @@ export function HybridPriceSelector({
               <span className="font-medium">Coins to redeem (merchandise)</span>
               <span className="flex items-center gap-1 font-bold">
                 <CoinIcon className="h-4 w-4" />
-                {formatCoin(value.coinsToRedeem)}
+                {formatCoin(coinsToRedeem)}
               </span>
             </div>
             <input
@@ -156,7 +158,7 @@ export function HybridPriceSelector({
               min={0}
               max={Math.max(0, maxRedeemable)}
               step={1}
-              value={Math.min(value.coinsToRedeem, maxRedeemable)}
+              value={coinsToRedeem}
               onChange={(e) =>
                 onChange({
                   mode: "HYBRID",
@@ -165,7 +167,7 @@ export function HybridPriceSelector({
               }
               className="w-full"
             />
-            <div className="space-y-1 rounded-xl bg-muted/40 p-3 text-sm">
+            <div className="bg-muted/40 space-y-1 rounded-xl p-3 text-sm">
               <p className="flex justify-between">
                 <span className="text-muted-foreground">Coins portion</span>
                 <span>{formatCoin(preview.coinAmount)}</span>
@@ -188,7 +190,7 @@ export function HybridPriceSelector({
           </div>
         ) : null}
 
-        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+        <p className="text-muted-foreground flex items-center gap-1 text-xs">
           <Leaf className="h-3.5 w-3.5 text-emerald-600" />1 Nature Coin ≈ ₹0.50
           internal value · shipping is always cash
         </p>

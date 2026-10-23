@@ -17,10 +17,10 @@ export default async function AdminAnalyticsPage() {
   const analytics = await getAdminAnalytics();
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="font-display text-2xl font-bold">Analytics</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Concise KPIs from live Prisma aggregates — no mock statistics.
         </p>
       </div>
@@ -40,10 +40,7 @@ export default async function AdminAnalyticsPage() {
           </ul>
         </AnalyticsCard>
 
-        <AnalyticsCard
-          title="User growth"
-          description="New accounts by month"
-        >
+        <AnalyticsCard title="User growth" description="New accounts by month">
           <ul className="space-y-1 text-sm">
             {analytics.userGrowth.map((m) => (
               <li key={m.month} className="flex justify-between">
@@ -59,7 +56,7 @@ export default async function AdminAnalyticsPage() {
           description="Stock by quality grade"
         >
           {analytics.inventoryLevels.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No inventory yet.</p>
+            <p className="text-muted-foreground text-sm">No inventory yet.</p>
           ) : (
             <ul className="space-y-1 text-sm">
               {analytics.inventoryLevels.map((g) => (
@@ -79,7 +76,7 @@ export default async function AdminAnalyticsPage() {
           <div className="space-y-2 text-sm">
             <p className="flex justify-between">
               <span className="text-muted-foreground">Earned / bonus</span>
-              <span className="font-medium coin-text">
+              <span className="coin-text font-medium">
                 {formatCoin(analytics.natureCoinUsage.earned)}
               </span>
             </p>
@@ -104,9 +101,7 @@ export default async function AdminAnalyticsPage() {
         >
           <div className="space-y-2 text-sm">
             {analytics.marketplaceActivity.byStatus.length === 0 ? (
-              <p className="text-muted-foreground">
-                No orders yet — ready for Phase 8.
-              </p>
+              <p className="text-muted-foreground">No orders yet.</p>
             ) : (
               analytics.marketplaceActivity.byStatus.map((s) => (
                 <p key={s.status} className="flex justify-between">
@@ -117,10 +112,11 @@ export default async function AdminAnalyticsPage() {
                 </p>
               ))
             )}
-            <p className="flex justify-between border-t border-border pt-2">
+            <p className="border-border flex justify-between border-t pt-2">
               <span className="text-muted-foreground">GMV</span>
               <span className="font-medium">
-                ₹{formatNumber(Math.round(analytics.marketplaceActivity.gmvInr))}{" "}
+                ₹
+                {formatNumber(Math.round(analytics.marketplaceActivity.gmvInr))}{" "}
                 · {formatCoin(analytics.marketplaceActivity.gmvCoins)}
               </span>
             </p>
@@ -128,13 +124,13 @@ export default async function AdminAnalyticsPage() {
         </AnalyticsCard>
 
         <AnalyticsCard
-          title="Recycler purchases"
-          description="Recycler-owned inventory lots (Phase 8 prep)"
+          title="Recycler inventory"
+          description="Recycler-owned inventory lots"
         >
           <p className="font-display text-3xl font-bold">
             {formatNumber(analytics.recyclerInventoryLots)}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 text-sm">
             Roles — users {analytics.roleCounts.users}, collectors{" "}
             {analytics.roleCounts.collectors}, recyclers{" "}
             {analytics.roleCounts.recyclers}

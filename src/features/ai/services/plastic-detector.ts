@@ -21,6 +21,7 @@ export interface BoundingBox {
   h: number;
   label: string;
   confidence: number;
+  resin?: string;
 }
 
 export interface PlasticDetectionOutput {
@@ -31,6 +32,8 @@ export interface PlasticDetectionOutput {
   boxes: BoundingBox[];
   estimatedWeightGrams: number;
   plasticTypes: string[];
+  /** Plain-language description of the photo from the vision model. */
+  summary?: string;
   processingTimeMs: number;
   analysis: {
     width: number;
@@ -174,22 +177,15 @@ export async function detectPlasticInImage(
       const remote = await callAiDetect(input.buffer, input.mimeType);
       const width = remote.image.width || input.width || 0;
       const height = remote.image.height || input.height || 0;
-      // Confirmed qty must match boxes of the dominant class (what the UI badge shows),
-      // not every plastic box the model returned.
-      const dominantBoxCount = remote.boxes.filter(
-        (b) => b.label === remote.detectedClass,
-      ).length;
+      // Every detected item counts toward the quantity, across all plastic types.
       const detectedCount =
-        dominantBoxCount > 0 ? dominantBoxCount : remote.detectedCount;
+        remote.boxes.length > 0 ? remote.boxes.length : remote.detectedCount;
       const confidence = calculateOverallConfidence({
         modelConfidence: remote.confidence,
         imageWidth: width || null,
         imageHeight: height || null,
         imageBytes: remote.image.bytes,
-        categoryCertainty:
-          remote.boxes.length > 0
-            ? dominantBoxCount / remote.boxes.length
-            : 0.35,
+        categoryCertainty: remote.boxes.length > 0 ? remote.confidence : 0.35,
       });
 
       return {
@@ -214,6 +210,7 @@ export async function detectPlasticInImage(
             }),
         ),
         plasticTypes: remote.plasticTypes,
+        summary: remote.summary || undefined,
         processingTimeMs: remote.processingTimeMs,
         analysis: {
           width,

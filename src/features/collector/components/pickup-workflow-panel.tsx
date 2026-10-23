@@ -32,6 +32,7 @@ interface PickupWorkflowPanelProps {
   claimedWeightGrams?: number | null;
   claimedQuantity?: number | null;
   claimedQuality?: string | null;
+  otpLocked?: boolean;
 }
 
 /**
@@ -43,12 +44,14 @@ export function PickupWorkflowPanel({
   claimedWeightGrams,
   claimedQuantity,
   claimedQuality,
+  otpLocked = false,
 }: PickupWorkflowPanelProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [weight, setWeight] = useState<WeightEntryValue>({
-    actualWeightGrams: claimedWeightGrams ?? 5000,
-    actualQuantity: claimedQuantity ?? 1,
+    // Server enforces a 100 g minimum; never prefill below it.
+    actualWeightGrams: Math.max(100, claimedWeightGrams ?? 100),
+    actualQuantity: claimedQuantity ?? 0,
   });
   const [quality, setQuality] = useState<VerifiedQuality>(
     (claimedQuality as VerifiedQuality) || "MIXED",
@@ -140,6 +143,7 @@ export function PickupWorkflowPanel({
               pickupId={pickupId}
               verified={otpVerified}
               disabled={pending || status !== "IN_PROGRESS"}
+              locked={otpLocked}
               onVerified={() => router.refresh()}
             />
           )}
@@ -176,6 +180,7 @@ export function PickupWorkflowPanel({
                   <Textarea
                     id="collector-notes"
                     rows={3}
+                    maxLength={2000}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Condition, sorting notes, discrepancies…"

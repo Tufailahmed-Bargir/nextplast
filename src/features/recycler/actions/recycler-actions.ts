@@ -2,10 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import {
-  AuthHttpError,
-  requireRoles,
-} from "@/features/auth/services/guards";
+import { AuthHttpError, requireRoles } from "@/features/auth/services/guards";
 import { rolePermissions } from "@/features/auth/services/permissions";
 import { purchaseInventoryLot } from "@/features/recycler/services/purchase";
 import { logger } from "@/utils/logger";
@@ -33,6 +30,7 @@ function mapError(error: unknown): string {
     RECYCLER_NOT_FOUND: "Recycler profile not found.",
     RECYCLER_NOT_APPROVED: "Your recycler account is pending admin approval.",
     LOT_NOT_FOUND: "Inventory lot not found.",
+    LOT_NOT_AVAILABLE: "This lot is no longer available for purchase.",
     INSUFFICIENT_STOCK: "Not enough stock in this lot.",
   };
   return map[message] ?? "Purchase failed. Please try again.";

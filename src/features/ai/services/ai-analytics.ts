@@ -6,7 +6,7 @@ import { getAiServiceStatus } from "@/features/ai/services/ai-client";
 import { getAiServiceConfig } from "@/features/ai/services/ai-config";
 
 function dayKey(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /**
@@ -102,7 +102,9 @@ export async function getAiAnalytics() {
   });
   fraudFlagCount = recentForFraud.filter((row) => {
     const payload = row.rawPayload as { fraudAlerts?: unknown[] } | null;
-    return Array.isArray(payload?.fraudAlerts) && payload.fraudAlerts.length > 0;
+    return (
+      Array.isArray(payload?.fraudAlerts) && payload.fraudAlerts.length > 0
+    );
   }).length;
 
   processingTimes = [];
@@ -119,8 +121,7 @@ export async function getAiAnalytics() {
       : 0;
 
   const accuracyDenom = acceptCount + reviewCount + rejectCount;
-  const detectionAccuracy =
-    accuracyDenom > 0 ? acceptCount / accuracyDenom : 0;
+  const detectionAccuracy = accuracyDenom > 0 ? acceptCount / accuracyDenom : 0;
 
   const service = await getAiServiceStatus();
   const config = getAiServiceConfig();

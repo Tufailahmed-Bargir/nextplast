@@ -26,6 +26,8 @@ interface PlasticDetailsFormProps {
   categories: CategoryOption[];
   value: PlasticDetailsValue;
   onChange: (value: PlasticDetailsValue) => void;
+  /** Total confirmed in the AI review step; locks the quantity when present. */
+  confirmedQuantity?: number;
 }
 
 const QUALITY_OPTIONS = [
@@ -53,7 +55,9 @@ export function PlasticDetailsForm({
   categories,
   value,
   onChange,
+  confirmedQuantity,
 }: PlasticDetailsFormProps) {
+  const quantityLocked = confirmedQuantity != null;
   const weightKg = value.claimedWeightGrams / 1000;
 
   return (
@@ -76,7 +80,7 @@ export function PlasticDetailsForm({
                 )}
               >
                 <p className="font-medium">{category.name}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {category.resinType}
                 </p>
               </button>
@@ -107,8 +111,9 @@ export function PlasticDetailsForm({
           }
           className="w-full accent-emerald-600"
         />
-        <p className="text-xs text-muted-foreground">
-          {formatWeight(value.claimedWeightGrams)} claimed (collector will verify)
+        <p className="text-muted-foreground text-xs">
+          {formatWeight(value.claimedWeightGrams)} claimed (collector will
+          verify)
         </p>
       </div>
 
@@ -118,7 +123,10 @@ export function PlasticDetailsForm({
           id="qty"
           type="number"
           min={1}
-          value={value.claimedQuantity}
+          value={confirmedQuantity ?? value.claimedQuantity}
+          readOnly={quantityLocked}
+          aria-describedby={quantityLocked ? "qty-hint" : undefined}
+          className={quantityLocked ? "bg-muted/50" : undefined}
           onChange={(e) =>
             onChange({
               ...value,
@@ -126,6 +134,12 @@ export function PlasticDetailsForm({
             })
           }
         />
+        {quantityLocked ? (
+          <p id="qty-hint" className="text-muted-foreground text-xs">
+            From your confirmed AI review. Go back to the review step to change
+            it.
+          </p>
+        ) : null}
       </div>
 
       <div>
@@ -146,7 +160,7 @@ export function PlasticDetailsForm({
                 )}
               >
                 <p className="font-medium">{option.label}</p>
-                <p className="text-xs text-muted-foreground">{option.hint}</p>
+                <p className="text-muted-foreground text-xs">{option.hint}</p>
               </button>
             );
           })}

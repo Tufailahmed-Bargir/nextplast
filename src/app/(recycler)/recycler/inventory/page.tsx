@@ -17,10 +17,7 @@ export const metadata: Metadata = { title: "Buy Inventory" };
 export default async function RecyclerInventoryPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
-  if (
-    session.user.role !== UserRole.RECYCLER &&
-    !isAdmin(session.user.role)
-  ) {
+  if (session.user.role !== UserRole.RECYCLER && !isAdmin(session.user.role)) {
     redirect("/unauthorized");
   }
 
@@ -29,12 +26,12 @@ export default async function RecyclerInventoryPage() {
   const approved = recycler?.verificationStatus === "APPROVED";
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="font-display text-2xl font-bold">Buy inventory</h2>
-        <p className="text-sm text-muted-foreground">
-          Purchase verified plastic lots. Payment is recorded as platform revenue
-          (unit price × kg).
+        <p className="text-muted-foreground text-sm">
+          Purchase verified plastic lots. Payment is recorded as platform
+          revenue (unit price × kg).
         </p>
       </div>
 
@@ -49,9 +46,9 @@ export default async function RecyclerInventoryPage() {
 
       {lots.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-sm text-muted-foreground">
-            No platform stock available. Complete collector verifications to stock
-            inventory.
+          <CardContent className="text-muted-foreground py-8 text-sm">
+            No platform stock available. Complete collector verifications to
+            stock inventory.
           </CardContent>
         </Card>
       ) : (
@@ -70,7 +67,7 @@ export default async function RecyclerInventoryPage() {
                 <p className="text-muted-foreground">
                   Resin {lot.category.resinType} · Status {lot.status}
                 </p>
-                {approved || isAdmin(session.user.role) ? (
+                {approved ? (
                   <PurchaseLotForm
                     inventoryId={lot.id}
                     availableGrams={lot.quantityGrams}

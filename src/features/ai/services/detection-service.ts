@@ -35,7 +35,9 @@ export async function detectAndPersist(input: DetectAndPersistInput) {
       orderBy: { createdAt: "desc" },
     });
     if (existing) {
-      const payload = existing.rawPayload as { analysis?: { contentHash?: string } } | null;
+      const payload = existing.rawPayload as {
+        analysis?: { contentHash?: string };
+      } | null;
       if (payload?.analysis?.contentHash === contentHash) {
         return { reused: true as const, result: existing };
       }
@@ -91,6 +93,7 @@ export async function detectAndPersist(input: DetectAndPersistInput) {
           boxes: detection.boxes,
           analysis: detection.analysis,
           plasticTypes: detection.plasticTypes,
+          summary: detection.summary ?? null,
           estimatedWeightGrams: detection.estimatedWeightGrams,
           processingTimeMs: detection.processingTimeMs,
           fraudAlerts: fraud,

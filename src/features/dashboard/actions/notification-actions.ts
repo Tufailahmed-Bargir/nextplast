@@ -3,14 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/prisma";
-import {
-  AuthHttpError,
-  requireAuth,
-} from "@/features/auth/services/guards";
+import { AuthHttpError, requireAuth } from "@/features/auth/services/guards";
 
 function revalidateInbox() {
   revalidatePath("/notifications");
   revalidatePath("/dashboard");
+  revalidatePath("/collector/notifications");
+  revalidatePath("/recycler/notifications");
 }
 
 /**

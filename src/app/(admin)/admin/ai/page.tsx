@@ -68,8 +68,9 @@ async function AdminAiDashboard() {
               {analytics.service.modelLoaded ? "yes" : "no"}
             </p>
             <p>
-              <span className="text-muted-foreground">Detection accuracy: </span>
-              {Math.round(analytics.detectionAccuracy * 100)}% ACCEPT share
+              <span className="text-muted-foreground">Accept rate: </span>
+              {Math.round(analytics.detectionAccuracy * 100)}% of decided
+              detections
             </p>
           </CardContent>
         </Card>
@@ -80,14 +81,17 @@ async function AdminAiDashboard() {
           </CardHeader>
           <CardContent>
             {analytics.mostCommonTypes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No detections yet.</p>
+              <p className="text-muted-foreground text-sm">
+                No detections yet.
+              </p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {analytics.mostCommonTypes.map((t) => (
                   <li key={t.type} className="flex justify-between gap-3">
                     <span className="text-muted-foreground">{t.type}</span>
                     <span className="font-medium">
-                      {formatNumber(t.count)} · {Math.round(t.avgConfidence * 100)}%
+                      {formatNumber(t.count)} ·{" "}
+                      {Math.round(t.avgConfidence * 100)}%
                     </span>
                   </li>
                 ))}
@@ -102,7 +106,7 @@ async function AdminAiDashboard() {
           <CardTitle className="text-lg">Daily detection requests</CardTitle>
         </CardHeader>
         <CardContent>
-          <ul className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 text-sm">
+          <ul className="grid gap-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {analytics.dailyRequests.map((d) => (
               <li key={d.day} className="flex justify-between gap-2">
                 <span className="text-muted-foreground">{d.day}</span>
@@ -128,14 +132,17 @@ async function AdminAiDashboard() {
           </CardHeader>
           <CardContent>
             {analytics.recentErrors.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No AI_INFERENCE_ERROR audit rows in the last 7 days.
               </p>
             ) : (
               <ul className="space-y-2 text-sm">
                 {analytics.recentErrors.map((err) => (
-                  <li key={err.id} className="rounded-lg border border-border p-2">
-                    <p className="text-xs text-muted-foreground">
+                  <li
+                    key={err.id}
+                    className="border-border rounded-lg border p-2"
+                  >
+                    <p className="text-muted-foreground text-xs">
                       {err.createdAt.toLocaleString()}
                     </p>
                     <pre className="mt-1 overflow-x-auto text-xs">
@@ -159,10 +166,10 @@ export default async function AdminAiPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="font-display text-2xl font-bold">AI Platform</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Live Gemini model status and Prisma-backed detection analytics.
         </p>
       </div>

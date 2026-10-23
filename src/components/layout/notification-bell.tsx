@@ -22,7 +22,12 @@ async function fetchUnreadCount(): Promise<number> {
  * Header bell with an unread badge. Refreshes on navigation and every minute
  * while the tab is visible.
  */
-export function NotificationBell() {
+export function NotificationBell({
+  href = "/notifications",
+}: {
+  /** Role-specific inbox; staff can't open the customer /notifications page. */
+  href?: string;
+}) {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { data: count = 0 } = useQuery({
@@ -45,14 +50,14 @@ export function NotificationBell() {
 
   return (
     <Link
-      href="/notifications"
+      href={href}
       aria-label={label}
       title={label}
-      className="relative inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="text-muted-foreground hover:bg-muted hover:text-foreground relative inline-flex size-8 items-center justify-center rounded-lg transition-colors"
     >
       <Bell className="h-5 w-5" />
       {count > 0 ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-background">
+        <span className="ring-background absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] leading-none font-semibold text-white ring-2">
           {count > 9 ? "9+" : count}
         </span>
       ) : null}

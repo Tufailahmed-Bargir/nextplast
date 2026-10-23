@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Recycle } from "lucide-react";
 import { auth } from "@/auth";
 import { getWalletPageData } from "@/features/dashboard";
+import { signedWalletAmount } from "@/features/dashboard/types";
 import { WalletCard } from "@/features/dashboard/components/wallet-card";
 import { DashboardEmpty } from "@/features/dashboard/components/dashboard-empty";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,10 +26,10 @@ export default async function WalletPage() {
   const { wallet, transactions } = await getWalletPageData(session.user.id);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="font-display text-2xl font-bold">Nature Wallet</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Coins are earned from verified pickups and redeemable only in the
           marketplace — never cash-convertible.
         </p>
@@ -48,7 +49,7 @@ export default async function WalletPage() {
               description="Verified pickups and marketplace redemptions will appear in this ledger."
             />
           ) : (
-            <ul className="divide-y divide-border">
+            <ul className="divide-border divide-y">
               {transactions.map((tx) => (
                 <li
                   key={tx.id}
@@ -59,20 +60,25 @@ export default async function WalletPage() {
                       <p className="truncate text-sm font-medium">
                         {tx.title ?? tx.type}
                       </p>
-                      <Badge variant="secondary">{tx.status.toLowerCase()}</Badge>
+                      <Badge variant="secondary">
+                        {tx.status.toLowerCase()}
+                      </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {tx.description ?? tx.type} · {formatDateTime(tx.createdAt)}
+                    <p className="text-muted-foreground text-xs">
+                      {tx.description ?? tx.type} ·{" "}
+                      {formatDateTime(tx.createdAt)}
                     </p>
                   </div>
                   <span
                     className={cn(
                       "shrink-0 text-sm font-semibold",
-                      tx.amount >= 0 ? "coin-text" : "text-destructive",
+                      signedWalletAmount(tx.type, tx.amount) >= 0
+                        ? "coin-text"
+                        : "text-destructive",
                     )}
                   >
-                    {tx.amount >= 0 ? "+" : ""}
-                    {formatCoin(tx.amount)}
+                    {signedWalletAmount(tx.type, tx.amount) >= 0 ? "+" : ""}
+                    {formatCoin(signedWalletAmount(tx.type, tx.amount))}
                   </span>
                 </li>
               ))}

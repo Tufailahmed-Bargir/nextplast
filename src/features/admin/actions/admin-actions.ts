@@ -1,11 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { ProfileVerificationStatus } from "@prisma/client";
-import {
-  AuthHttpError,
-  requireAdmin,
-} from "@/features/auth/services/guards";
+import { AuthHttpError, requireAdmin } from "@/features/auth/services/guards";
 import {
   inventoryAdjustSchema,
   productToggleSchema,
@@ -30,6 +28,7 @@ import {
 import { upsertSetting } from "@/features/admin/services/app-settings";
 import { globalAdminSearch } from "@/features/admin/services/admin-users";
 import { writeAdminLog } from "@/features/admin/services/admin-audit";
+import { SETTING_KEYS } from "@/validations/admin";
 import { prisma } from "@/prisma";
 import { adminSearchSchema } from "@/validations/admin";
 import { logger } from "@/utils/logger";
@@ -51,6 +50,7 @@ function mapError(error: unknown): string {
     CANNOT_ADJUST_ADMIN: "Admin wallets cannot be adjusted here.",
     CANNOT_ADJUST_SELF: "You cannot adjust your own wallet.",
     LISTING_NOT_FOUND: "Listing not found.",
+    LISTING_NOT_REVIEWABLE: "This listing is already completed or cancelled.",
     INVENTORY_NOT_FOUND: "Inventory row not found.",
     INVENTORY_NEGATIVE: "Inventory cannot go below zero.",
     ADJUSTMENTS_DISABLED: "Wallet adjustments are disabled in settings.",
@@ -121,7 +121,11 @@ export async function reviewListingAction(
       notes: parsed.data.notes,
     });
     revalidateAdmin();
-    return { success: true, data: { ok: true }, message: "Listing review saved." };
+    return {
+      success: true,
+      data: { ok: true },
+      message: "Listing review saved.",
+    };
   } catch (error) {
     logger.error("reviewListing failed", { error }, "admin");
     return { success: false, error: mapError(error) };
@@ -161,7 +165,8 @@ export async function adjustInventoryAction(
   try {
     const admin = await requireAdmin();
     const parsed = inventoryAdjustSchema.safeParse(raw);
-    if (!parsed.success) return { success: false, error: "Invalid inventory delta." };
+    if (!parsed.success)
+      return { success: false, error: "Invalid inventory delta." };
     await adjustInventory({
       adminId: admin.id,
       inventoryId: parsed.data.inventoryId,
@@ -181,12 +186,13 @@ export async function updateCollectorAction(
   try {
     const admin = await requireAdmin();
     const parsed = setCollectorVerificationSchema.safeParse(raw);
-    if (!parsed.success) return { success: false, error: "Invalid collector update." };
+    if (!parsed.success)
+      return { success: false, error: "Invalid collector update." };
     await updateCollectorAdmin({
       adminId: admin.id,
       collectorId: parsed.data.collectorId,
-      verificationStatus:
-        parsed.data.verificationStatus as ProfileVerificationStatus,
+      verificationStatus: parsed.data
+        .verificationStatus as ProfileVerificationStatus,
       isOnDuty: parsed.data.isOnDuty,
       zone: parsed.data.zone,
     });
@@ -203,12 +209,13 @@ export async function updateRecyclerAction(
   try {
     const admin = await requireAdmin();
     const parsed = setRecyclerVerificationSchema.safeParse(raw);
-    if (!parsed.success) return { success: false, error: "Invalid recycler update." };
+    if (!parsed.success)
+      return { success: false, error: "Invalid recycler update." };
     await updateRecyclerAdmin({
       adminId: admin.id,
       recyclerId: parsed.data.recyclerId,
-      verificationStatus:
-        parsed.data.verificationStatus as ProfileVerificationStatus,
+      verificationStatus: parsed.data
+        .verificationStatus as ProfileVerificationStatus,
       companyName: parsed.data.companyName,
     });
     revalidateAdmin();
@@ -224,7 +231,8 @@ export async function toggleProductAction(
   try {
     const admin = await requireAdmin();
     const parsed = productToggleSchema.safeParse(raw);
-    if (!parsed.success) return { success: false, error: "Invalid product update." };
+    if (!parsed.success)
+      return { success: false, error: "Invalid product update." };
     await setProductActive({
       adminId: admin.id,
       productId: parsed.data.productId,
@@ -237,6 +245,25 @@ export async function toggleProductAction(
   }
 }
 
+const settingValueSchemas = {
+  [SETTING_KEYS.general]: z.object({
+    platformName: z.string().trim().min(1).max(80),
+    supportEmail: z.string().email().max(120),
+  }),
+  [SETTING_KEYS.marketplace]: z.object({
+    enabled: z.boolean(),
+    allowHybridPayments: z.boolean(),
+  }),
+  [SETTING_KEYS.wallet]: z.object({
+    adjustmentsEnabled: z.boolean(),
+    maxAdjustmentCoins: z.number().int().min(0).max(1_000_000),
+  }),
+  [SETTING_KEYS.notifications]: z.object({
+    pickupEmailsEnabled: z.boolean(),
+    rewardEmailsEnabled: z.boolean(),
+  }),
+} as const;
+
 export async function upsertSettingAction(
   raw: unknown,
 ): Promise<AdminActionResult<{ ok: true }>> {
@@ -244,7 +271,15 @@ export async function upsertSettingAction(
     const admin = await requireAdmin();
     const parsed = upsertSettingSchema.safeParse(raw);
     if (!parsed.success) return { success: false, error: "Invalid settings." };
-    await upsertSetting(parsed.data);
+    const valueSchema = settingValueSchemas[parsed.data.key];
+    const value = valueSchema.safeParse(parsed.data.value);
+    if (!value.success) {
+      return {
+        success: false,
+        error: value.error.issues[0]?.message ?? "Invalid settings.",
+      };
+    }
+    await upsertSetting({ ...parsed.data, value: value.data });
     await writeAdminLog(prisma, {
       adminId: admin.id,
       action: "SETTINGS_UPDATED",

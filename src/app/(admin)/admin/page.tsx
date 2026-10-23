@@ -38,11 +38,11 @@ export default async function AdminDashboardPage() {
   ]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold">Admin Dashboard</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Manage users, collectors, recyclers, and platform operations.
           </p>
         </div>
@@ -144,20 +144,18 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {stats.recentOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No orders yet — marketplace empty state ready for Phase 8.
-              </p>
+              <p className="text-muted-foreground text-sm">No orders yet.</p>
             ) : (
               stats.recentOrders.map((o) => (
                 <div
                   key={o.id}
-                  className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2 text-sm"
+                  className="bg-muted/40 flex items-center justify-between rounded-xl px-3 py-2 text-sm"
                 >
                   <div>
                     <p className="font-medium">
                       #{o.id.slice(0, 8)} · {o.userName}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {formatRelative(o.createdAt)} · {o.itemCount} item(s)
                     </p>
                   </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,14 +12,13 @@ import { formatWeight } from "@/utils/coin";
 interface PurchaseLotFormProps {
   inventoryId: string;
   availableGrams: number;
-  defaultPricePerKg?: number;
 }
 
 export function PurchaseLotForm({
   inventoryId,
   availableGrams,
-  defaultPricePerKg = 25,
 }: PurchaseLotFormProps) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
@@ -35,6 +35,8 @@ export function PurchaseLotForm({
           });
           if (result.success) toast.success(result.message);
           else toast.error(result.error);
+          // Refresh on every outcome so the available stock badge and max stay current.
+          router.refresh();
         });
       }}
     >
@@ -44,7 +46,7 @@ export function PurchaseLotForm({
           id={`qty-${inventoryId}`}
           name="quantityGrams"
           type="number"
-          min={100}
+          min={1}
           max={availableGrams}
           defaultValue={Math.min(1000, availableGrams)}
           className="w-28"
@@ -59,7 +61,7 @@ export function PurchaseLotForm({
           type="number"
           min={0}
           step="0.5"
-          defaultValue={defaultPricePerKg}
+          placeholder="Enter price"
           className="w-24"
           required
         />

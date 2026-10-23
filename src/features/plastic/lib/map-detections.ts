@@ -34,11 +34,13 @@ export function mapListingDetections(
         h: number;
         label: string;
         confidence: number;
+        resin?: string;
       }[];
       fraudAlerts?: { code: string; message: string; severity: string }[];
       estimatedWeightGrams?: number;
       processingTimeMs?: number;
       plasticTypes?: string[];
+      summary?: string | null;
     } | null;
 
     return {
@@ -57,6 +59,7 @@ export function mapListingDetections(
       estimatedWeightGrams: payload?.estimatedWeightGrams ?? null,
       processingTimeMs: payload?.processingTimeMs ?? null,
       plasticTypes: payload?.plasticTypes ?? [],
+      summary: payload?.summary ?? null,
     };
   });
 }

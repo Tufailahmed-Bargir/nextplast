@@ -13,6 +13,7 @@ interface DashboardShellProps {
   showMarketplaceLinks?: boolean;
   showNotifications?: boolean;
   showSearch?: boolean;
+  notificationsHref?: string;
 }
 
 /**
@@ -29,9 +30,10 @@ export function DashboardShell({
   showMarketplaceLinks,
   showNotifications,
   showSearch,
+  notificationsHref,
 }: DashboardShellProps) {
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="bg-muted/30 flex min-h-screen">
       <AppSidebar
         items={navItems}
         coinBalance={coinBalance}
@@ -45,6 +47,7 @@ export function DashboardShell({
           showMarketplaceLinks={showMarketplaceLinks}
           showNotifications={showNotifications}
           showSearch={showSearch}
+          notificationsHref={notificationsHref}
         />
         <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
           {children}

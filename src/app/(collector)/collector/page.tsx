@@ -28,18 +28,26 @@ export default async function CollectorDashboardPage() {
   const data = await getCollectorDashboardData(session.user.id);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold">
             Collector Dashboard
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {session.user.name ?? "Collector"}
             {data.collector.zone ? ` · ${data.collector.zone}` : ""}
           </p>
         </div>
-        <DutyToggle isOnDuty={data.collector.isOnDuty} />
+        <div className="flex flex-wrap items-center gap-2">
+          <DutyToggle isOnDuty={data.collector.isOnDuty} />
+          <Link
+            href="/collector/notifications"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            Notifications
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -76,7 +84,7 @@ export default async function CollectorDashboardPage() {
         <Card className="border-sky-200 bg-gradient-to-br from-sky-50 to-blue-50 dark:border-sky-900 dark:from-sky-950 dark:to-slate-900">
           <CardHeader className="pb-2">
             <CardTitle>Active pickup</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               #{data.active.id.slice(0, 8)} ·{" "}
               {data.active.listing.user.name ?? "Customer"}
             </p>
@@ -94,9 +102,7 @@ export default async function CollectorDashboardPage() {
                   : null
               }
               distanceKm={
-                data.active.distanceKm
-                  ? Number(data.active.distanceKm)
-                  : null
+                data.active.distanceKm ? Number(data.active.distanceKm) : null
               }
               scheduledAt={data.active.scheduledAt}
               href={`/collector/pickups/${data.active.id}`}
@@ -123,14 +129,14 @@ export default async function CollectorDashboardPage() {
             <CardTitle>Today&apos;s schedule</CardTitle>
             <Link
               href="/collector/assigned"
-              className="text-sm text-primary hover:underline"
+              className="text-primary text-sm hover:underline"
             >
               View all
             </Link>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.today.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Nothing scheduled for today.
               </p>
             ) : (
@@ -174,7 +180,7 @@ export default async function CollectorDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {data.assigned.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No assigned pickups yet.
               </p>
             ) : (
@@ -204,7 +210,7 @@ export default async function CollectorDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {data.recentCompleted.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Completed pickups will show here.
               </p>
             ) : (

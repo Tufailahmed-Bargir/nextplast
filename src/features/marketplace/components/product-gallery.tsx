@@ -22,7 +22,7 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
     <div className="space-y-3">
       <div
         className={cn(
-          "relative aspect-square overflow-hidden rounded-2xl bg-muted/40",
+          "bg-muted/40 relative aspect-square overflow-hidden rounded-2xl",
           zoomed && "cursor-zoom-out",
         )}
         onClick={() => current.url && setZoomed((z) => !z)}
@@ -40,13 +40,13 @@ export function ProductGallery({ images, name }: ProductGalleryProps) {
             priority
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
+          <div className="text-muted-foreground flex h-full items-center justify-center">
             No image
           </div>
         )}
       </div>
       {list.length > 1 ? (
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto">
           {list.map((img, idx) => (
             <button
               key={img.id}

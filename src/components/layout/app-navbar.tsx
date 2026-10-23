@@ -21,6 +21,7 @@ interface AppNavbarProps {
   showNotifications?: boolean;
   /** Product/listing search — only for user/marketplace shells. */
   showSearch?: boolean;
+  notificationsHref?: string;
 }
 
 const TITLE_BY_PATH: Record<string, string> = {
@@ -57,6 +58,7 @@ export function AppNavbar({
   showMarketplaceLinks = false,
   showNotifications = false,
   showSearch = false,
+  notificationsHref,
 }: AppNavbarProps) {
   const pathname = usePathname();
   const { setMobileOpen } = useSidebarStore();
@@ -76,7 +78,7 @@ export function AppNavbar({
     .toUpperCase();
 
   return (
-    <header className="glass sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/50 px-4 sm:px-6">
+    <header className="glass border-border/50 sticky top-0 z-30 flex h-16 items-center gap-3 border-b px-4 sm:px-6">
       <Button
         variant="ghost"
         size="icon"
@@ -91,49 +93,62 @@ export function AppNavbar({
         {pageTitle}
       </h1>
 
+      {/* Phones get a search icon instead of a cramped input. */}
+      <div className="flex-1 sm:hidden" />
       {showSearch ? (
-        <div className="mx-auto max-w-md flex-1 sm:mx-0">
+        <div className="hidden max-w-md flex-1 sm:block">
           <form action="/search" method="get" className="relative">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
               aria-hidden
             />
             <Input
               name="q"
               placeholder="Search products, listings, orders..."
-              className="h-10 rounded-xl bg-muted/50 pl-10"
+              className="bg-muted/50 h-10 rounded-xl pl-10"
               aria-label="Search"
             />
           </form>
         </div>
       ) : (
-        <div className="flex-1" />
+        <div className="hidden flex-1 sm:block" />
       )}
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        {showSearch ? (
+          <Link
+            href="/search"
+            aria-label="Search"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-lg transition-colors sm:hidden"
+          >
+            <Search className="h-5 w-5" />
+          </Link>
+        ) : null}
         <ThemeToggleButton />
-        {showNotifications ? <NotificationBell /> : null}
+        {showNotifications ? (
+          <NotificationBell href={notificationsHref} />
+        ) : null}
         {showMarketplaceLinks ? (
           <>
             <Link
               href="/wishlist"
               aria-label="Wishlist"
-              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-lg transition-colors"
             >
               <Heart className="h-5 w-5" />
             </Link>
             <Link
               href="/cart"
               aria-label="Cart"
-              className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex size-8 items-center justify-center rounded-lg transition-colors"
             >
               <ShoppingCart className="h-5 w-5" />
             </Link>
           </>
         ) : null}
         <Link href={profileHref} aria-label="Open profile">
-          <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+          <Avatar className="ring-primary/20 h-8 w-8 ring-2">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>

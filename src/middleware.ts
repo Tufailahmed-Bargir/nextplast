@@ -74,10 +74,7 @@ function matchesAnyPrefix(
  * Keep staff roles inside their own app shell.
  * /profile maps to the role-specific profile when available.
  */
-function staffShellRedirect(
-  role: Role,
-  pathname: string,
-): string | null {
+function staffShellRedirect(role: Role, pathname: string): string | null {
   const hitsUserShell = matchesAnyPrefix(pathname, USER_SHELL_PREFIXES);
   const hitsShop = matchesAnyPrefix(pathname, SHOP_PREFIXES);
 
@@ -122,9 +119,7 @@ export async function middleware(request: NextRequest) {
   });
 
   const isAuthenticated = Boolean(
-    token &&
-      !token.error &&
-      (token.sub || token.id),
+    token && !token.error && (token.sub || token.id),
   );
   const role = (token?.role as Role | undefined) ?? UserRole.USER;
 
@@ -135,9 +130,7 @@ export async function middleware(request: NextRequest) {
         pathname === "/register" ||
         pathname === "/forgot-password")
     ) {
-      return NextResponse.redirect(
-        new URL(getRoleHomePath(role), request.url),
-      );
+      return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
     }
 
     // Marketplace is public for guests/users, but staff stay in their shell.
@@ -155,6 +148,15 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!isAuthenticated) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: "UNAUTHORIZED", message: "Authentication required" },
+        },
+        { status: 401 },
+      );
+    }
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
@@ -170,10 +172,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
-  if (
-    startsWithPath(pathname, "/collector") &&
-    !canAccess(role, "collector")
-  ) {
+  if (startsWithPath(pathname, "/collector") && !canAccess(role, "collector")) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
@@ -218,10 +217,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
-  if (
-    startsWithPath(pathname, "/dashboard") &&
-    !canAccess(role, "dashboard")
-  ) {
+  if (startsWithPath(pathname, "/dashboard") && !canAccess(role, "dashboard")) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 

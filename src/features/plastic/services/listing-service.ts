@@ -20,10 +20,7 @@ import { resolveImageMime } from "@/utils/image-mime";
 import { ensurePlasticCategories } from "@/features/plastic/services/categories";
 import { estimateNatureCoins } from "@/features/plastic/services/coin-estimate";
 import { evaluateFraud } from "@/features/ai/services/fraud-detection-service";
-import {
-  MAX_IMAGE_BYTES,
-  MAX_IMAGES_PER_LISTING,
-} from "@/validations/plastic";
+import { MAX_IMAGE_BYTES, MAX_IMAGES_PER_LISTING } from "@/validations/plastic";
 
 const EDITABLE_STATUSES: ListingStatus[] = [
   ListingStatus.DRAFT,
@@ -278,19 +275,17 @@ export async function runListingAiDetection(input: {
 
       const cached = existingRows.find((row) => {
         if (row.listingImageId !== image.id) return false;
-        const payload = row.rawPayload as
-          | {
-              analysis?: { contentHash?: string };
-              estimatedWeightGrams?: number;
-            }
-          | null;
+        const payload = row.rawPayload as {
+          analysis?: { contentHash?: string };
+          estimatedWeightGrams?: number;
+        } | null;
         return payload?.analysis?.contentHash === contentHash;
       });
 
       if (cached && !input.force) {
-        const payload = cached.rawPayload as
-          | { estimatedWeightGrams?: number }
-          | null;
+        const payload = cached.rawPayload as {
+          estimatedWeightGrams?: number;
+        } | null;
         totalEstWeight += Number(payload?.estimatedWeightGrams ?? 0);
         keepImageIds.push(image.id);
         continue;
@@ -351,6 +346,7 @@ export async function runListingAiDetection(input: {
               boxes: detection.boxes,
               analysis: detection.analysis,
               plasticTypes: detection.plasticTypes,
+              summary: detection.summary ?? null,
               estimatedWeightGrams: detection.estimatedWeightGrams,
               processingTimeMs: detection.processingTimeMs,
               fraudAlerts: fraud,
@@ -393,8 +389,11 @@ export async function runListingAiDetection(input: {
       },
     });
 
+    // Coins must be derived from the same weight the listing stores, so the
+    // review, details, and listing screens agree after a re-run.
+    const claimedWeightGrams = listing.claimedWeightGrams ?? totalEstWeight;
     const estimatedCoins = estimateNatureCoins({
-      weightGrams: totalEstWeight || listing.claimedWeightGrams || 1000,
+      weightGrams: claimedWeightGrams,
       quality: listing.quality,
     });
 
@@ -403,7 +402,7 @@ export async function runListingAiDetection(input: {
       where: { id: listing.id },
       data: {
         status: ListingStatus.DRAFT,
-        claimedWeightGrams: listing.claimedWeightGrams ?? totalEstWeight,
+        claimedWeightGrams,
         estimatedCoins,
       },
       include: {
@@ -461,8 +460,7 @@ export async function saveDetectionEdits(input: {
           matchedClaimed:
             (row.userConfirmedCount ?? row.detectedCount) ===
               row.detectedCount &&
-            (row.userConfirmedClass ?? row.detectedClass) ===
-              row.detectedClass,
+            (row.userConfirmedClass ?? row.detectedClass) === row.detectedClass,
         },
       }),
     ),
@@ -677,6 +675,11 @@ export async function submitListing(input: {
   if (!listing.pickupAddress || !listing.pickupRequest) {
     throw new Error("PICKUP_REQUIRED");
   }
+  const scheduledAt = listing.pickupRequest.scheduledAt;
+  if (scheduledAt && scheduledAt.getTime() < Date.now() - 60_000) {
+    // A draft can sit for days; a slot saved earlier must not go out as-is.
+    throw new Error("PICKUP_IN_PAST");
+  }
 
   const detections = listing.aiResults;
   const avgConfidence =
@@ -708,8 +711,7 @@ export async function submitListing(input: {
   });
 
   const needsManualReview =
-    fraud.some((f) => f.severity !== "low") ||
-    avgConfidence < 0.55;
+    fraud.some((f) => f.severity !== "low") || avgConfidence < 0.55;
 
   const estimatedCoins = estimateNatureCoins({
     weightGrams: listing.claimedWeightGrams,

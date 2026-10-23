@@ -59,15 +59,15 @@ export function WeightEntryForm({
           onChange={(e) =>
             onChange({
               ...value,
-              actualWeightGrams: Math.max(
-                100,
-                Math.round(Number(e.target.value || 0) * 1000),
+              actualWeightGrams: Math.min(
+                200_000,
+                Math.max(100, Math.round(Number(e.target.value || 0) * 1000)),
               ),
             })
           }
         />
         {claimedWeightGrams != null ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             User claimed {formatWeight(claimedWeightGrams)} — original claim is
             preserved.
           </p>
@@ -84,12 +84,15 @@ export function WeightEntryForm({
           onChange={(e) =>
             onChange({
               ...value,
-              actualQuantity: Math.max(0, Number(e.target.value) || 0),
+              actualQuantity: Math.min(
+                50_000,
+                Math.max(0, Math.floor(Number(e.target.value) || 0)),
+              ),
             })
           }
         />
         {claimedQuantity != null ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             User claimed {claimedQuantity} item(s).
           </p>
         ) : null}

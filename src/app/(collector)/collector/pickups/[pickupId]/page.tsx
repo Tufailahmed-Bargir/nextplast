@@ -7,6 +7,7 @@ import {
 } from "@/features/collector/services/pickup-queries";
 import { PickupDetails } from "@/features/collector/components/pickup-details";
 import { PickupWorkflowPanel } from "@/features/collector/components/pickup-workflow-panel";
+import { isOtpLocked } from "@/features/collector/services/otp";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCoin, formatWeight } from "@/utils/coin";
 import { formatDateTime } from "@/utils/date";
@@ -47,12 +48,12 @@ export default async function CollectorPickupDetailPage({ params }: PageProps) {
       : null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h2 className="font-display text-2xl font-bold">
           Pickup #{pickup.id.slice(0, 8)}
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Assigned workflow from arrival to verified inventory handoff.
         </p>
       </div>
@@ -86,6 +87,7 @@ export default async function CollectorPickupDetailPage({ params }: PageProps) {
         claimedWeightGrams={pickup.listing.claimedWeightGrams}
         claimedQuantity={claimedQuantity || null}
         claimedQuality={pickup.listing.quality}
+        otpLocked={isOtpLocked(pickup.otpFailCount)}
       />
 
       {pickup.verification ? (
@@ -110,9 +112,7 @@ export default async function CollectorPickupDetailPage({ params }: PageProps) {
               Customer confirmed:{" "}
               {pickup.verification.customerConfirmed ? "Yes" : "No"}
             </p>
-            <p>
-              Verified at: {formatDateTime(pickup.verification.verifiedAt)}
-            </p>
+            <p>Verified at: {formatDateTime(pickup.verification.verifiedAt)}</p>
             {pickup.verification.notes ? (
               <p className="text-muted-foreground">
                 Notes: {pickup.verification.notes}

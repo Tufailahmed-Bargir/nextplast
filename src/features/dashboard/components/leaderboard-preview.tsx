@@ -27,14 +27,14 @@ export function LeaderboardPreview({
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <div>
           <CardTitle>{title}</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Your rank: {userRank != null ? `#${userRank}` : "Unranked"}
           </p>
         </div>
         {showHeaderLink ? (
           <Link
             href="/leaderboard"
-            className="text-sm font-medium text-primary hover:underline"
+            className="text-primary text-sm font-medium hover:underline"
           >
             Full board
           </Link>
@@ -60,16 +60,16 @@ export function LeaderboardPreview({
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-display w-6 text-sm font-bold text-muted-foreground">
+                  <span className="font-display text-muted-foreground w-6 text-sm font-bold">
                     {entry.rank}
                   </span>
                   <span className="text-sm font-medium">
                     {entry.isCurrentUser ? "You" : entry.name}
                   </span>
                 </div>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   {formatNumber(entry.score)}
-                  {entry.metric === "plastic_kg" ? " kg" : ""}
+                  {entry.metric === "plastic_kg" ? " kg" : " coins"}
                 </span>
               </li>
             ))}

@@ -45,7 +45,7 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
         <div>
           <h3 className="font-display text-lg font-semibold">Profile</h3>
           <p className="text-muted-foreground text-sm">
-            Personal information shown on your recycler profile.
+            Personal information shown on your NexPlast profile.
           </p>
         </div>
         <form

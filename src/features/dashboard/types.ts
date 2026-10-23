@@ -17,6 +17,14 @@ export function decimalToNumber(
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Ledger amounts are stored unsigned for SPEND (balance decrements) and signed
+ * for everything else. Return the signed delta to the user's balance.
+ */
+export function signedWalletAmount(type: WalletTxType, amount: number): number {
+  return type === "SPEND" ? -amount : amount;
+}
+
 export interface WalletSummary {
   availableBalance: number;
   pendingBalance: number;

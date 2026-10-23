@@ -79,7 +79,7 @@ export function MarketplaceFilters({ categories }: MarketplaceFiltersProps) {
           ) : null}
         </div>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         <button
           type="button"
           onClick={() => push({ category: "all" })}

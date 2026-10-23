@@ -42,10 +42,11 @@ function mapError(error: unknown): string {
     PICKUP_ALREADY_ASSIGNED: "This pickup is already assigned to a collector.",
     COLLECTOR_NOT_FOUND: "Collector profile not found.",
     NOT_A_COLLECTOR: "Collector role required.",
-    INVALID_PICKUP_STATE: "This action is not allowed for the current pickup status.",
+    INVALID_PICKUP_STATE:
+      "This action is not allowed for the current pickup status.",
     INVALID_OTP: "Incorrect OTP. Ask the customer to check their notification.",
     OTP_LOCKED:
-      "Too many incorrect OTP attempts. Ask an admin to reassign this pickup.",
+      "Too many incorrect OTP attempts. Contact an admin to continue this pickup.",
     COLLECTOR_OFF_DUTY: "Collector is off duty and cannot be assigned.",
     COLLECTOR_NOT_APPROVED: "Collector is not approved for assignments.",
     ALREADY_COMPLETED: "This pickup was already completed.",

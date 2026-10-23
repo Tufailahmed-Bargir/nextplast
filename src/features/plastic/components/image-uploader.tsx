@@ -14,6 +14,7 @@ import {
   removeListingImageAction,
   uploadListingImagesAction,
 } from "@/features/plastic/actions/sell-actions";
+import { CameraCaptureDialog } from "@/features/plastic/components/camera-capture-dialog";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/compress-image";
 
@@ -31,7 +32,7 @@ interface ImageUploaderProps {
 }
 
 /**
- * Multi-image uploader with preview, validation, compression, and progress.
+ * Multi-image uploader with camera capture, preview, validation, compression, and progress.
  */
 export function ImageUploader({
   listingId,
@@ -40,6 +41,8 @@ export function ImageUploader({
   disabled,
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -62,7 +65,7 @@ export function ImageUploader({
     return null;
   }
 
-  function onSelect(fileList: FileList | null) {
+  function onSelect(fileList: FileList | File[] | null) {
     if (!fileList || fileList.length === 0) return;
     const files = Array.from(fileList);
     const error = validateFiles(files);
@@ -96,8 +99,20 @@ export function ImageUploader({
       } finally {
         setProgress(null);
         if (inputRef.current) inputRef.current.value = "";
+        if (cameraInputRef.current) cameraInputRef.current.value = "";
       }
     });
+  }
+
+  function openCamera() {
+    // Phones and tablets open their native camera straight from the file input;
+    // desktops need the in-page live camera.
+    const prefersNativeCamera = window.matchMedia("(pointer: coarse)").matches;
+    if (prefersNativeCamera) {
+      cameraInputRef.current?.click();
+    } else {
+      setCameraOpen(true);
+    }
   }
 
   function removeImage(imageId: string) {
@@ -142,6 +157,20 @@ export function ImageUploader({
           <Upload className="h-4 w-4" /> Choose files
         </span>
       </button>
+      <div className="flex items-center gap-3">
+        <span className="bg-border h-px flex-1" />
+        <span className="text-muted-foreground text-xs uppercase">or</span>
+        <span className="bg-border h-px flex-1" />
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        disabled={disabled || pending}
+        onClick={openCamera}
+      >
+        <Camera className="h-4 w-4" /> Take photo with camera
+      </Button>
       <input
         ref={inputRef}
         type="file"
@@ -149,6 +178,20 @@ export function ImageUploader({
         multiple
         className="hidden"
         onChange={(e) => onSelect(e.target.files)}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => onSelect(e.target.files)}
+      />
+      <CameraCaptureDialog
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        onCapture={(file) => onSelect([file])}
+        onUseUpload={() => inputRef.current?.click()}
       />
 
       {images.length > 0 ? (

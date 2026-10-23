@@ -27,7 +27,7 @@ export function RecommendationCarousel({
         <div>
           <h2 className="font-display text-xl font-bold">{title}</h2>
           {description ? (
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="text-muted-foreground text-sm">{description}</p>
           ) : null}
         </div>
         {href ? (
@@ -39,9 +39,9 @@ export function RecommendationCarousel({
           </Link>
         ) : null}
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="no-scrollbar flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
         {products.map((product) => (
-          <div key={product.id} className="w-56 shrink-0 sm:w-64">
+          <div key={product.id} className="w-56 shrink-0 snap-start sm:w-64">
             <ProductCard
               product={product}
               wished={wishlistIds?.has(product.id) ?? false}

@@ -25,7 +25,16 @@ export const PLASTIC_CLASSES = [
 
 const PRIMARY_TIMEOUT_MS = 15_000;
 
-const BOTTLE_CLASSES = new Set<string>(["PET Bottle", "HDPE Bottle"]);
+/** Resin codes — same vocabulary as PLASTIC_TYPES / plastic categories. */
+const RESIN_TYPES = [
+  "PET",
+  "HDPE",
+  "PVC",
+  "LDPE",
+  "PP",
+  "PS",
+  "OTHER",
+] as const;
 
 export interface AiServiceDetectResult {
   detectedClass: string;
@@ -39,9 +48,11 @@ export interface AiServiceDetectResult {
     h: number;
     label: string;
     confidence: number;
+    resin?: string;
   }[];
   plasticTypes: string[];
   estimatedWeightGrams: number;
+  summary: string;
   processingTimeMs: number;
   modelName: string;
   modelVersion: string;
@@ -69,6 +80,7 @@ export interface AiServiceStatus {
 
 interface GeminiItem {
   label: string;
+  resin?: string;
   box_2d: number[];
   confidence: number;
 }
@@ -76,17 +88,21 @@ interface GeminiItem {
 interface GeminiDetection {
   isPlasticWaste: boolean;
   imageQuality: "good" | "fair" | "poor";
+  summary: string;
   items: GeminiItem[];
 }
 
 const DETECTION_PROMPT = `You are the plastic-waste detector for NexPlast, a recycling marketplace.
-Detect every individual plastic waste item in the photo.
+Detect EVERY individual plastic waste item in the photo, of every kind — photos often mix bottles, bags, cups, containers, caps, film and cutlery, and each one must be listed.
 For each item return:
-- label: exactly one of ${PLASTIC_CLASSES.join(", ")}. Use "Other" for plastic that fits no label.
+- label: exactly one of ${PLASTIC_CLASSES.join(", ")}.
+  Bags and loose plastic film or wrap are "Plastic Bag"; food boxes, tubs and trays are "Container"; disposable cups are "Cup"; caps and lids are "Bottle Cap"; cutlery, straws and anything else plastic are "Other".
+- resin: the most likely resin code, one of ${RESIN_TYPES.join(", ")} (e.g. water bottle PET, milk jug HDPE, bag/film LDPE, cap/tub PP, cup/cutlery PS).
 - box_2d: [ymin, xmin, ymax, xmax] normalized to 0-1000.
-- confidence: 0-1, how sure you are this is that plastic item.
+- confidence: 0-1, how sure you are about this item.
 Return one entry per physical item (never two boxes for the same item), at most 50 items.
-Set isPlasticWaste to false and items to [] if the photo shows no plastic waste.
+summary: 1-2 plain sentences for the seller describing what is in the photo with counts per type and the overall condition (e.g. "4 bottle caps, 1 crushed PET bottle, 1 plastic bag ... Mostly clean, recyclable plastics.").
+Set isPlasticWaste to false and items to [] if the photo shows no plastic waste, and say why in summary.
 Set imageQuality to "poor" for blurry, dark or heavily cropped photos.`;
 
 const RESPONSE_SCHEMA = {
@@ -94,20 +110,22 @@ const RESPONSE_SCHEMA = {
   properties: {
     isPlasticWaste: { type: "BOOLEAN" },
     imageQuality: { type: "STRING", enum: ["good", "fair", "poor"] },
+    summary: { type: "STRING" },
     items: {
       type: "ARRAY",
       items: {
         type: "OBJECT",
         properties: {
           label: { type: "STRING", enum: [...PLASTIC_CLASSES] },
+          resin: { type: "STRING", enum: [...RESIN_TYPES] },
           box_2d: { type: "ARRAY", items: { type: "INTEGER" } },
           confidence: { type: "NUMBER" },
         },
-        required: ["label", "box_2d", "confidence"],
+        required: ["label", "resin", "box_2d", "confidence"],
       },
     },
   },
-  required: ["isPlasticWaste", "imageQuality", "items"],
+  required: ["isPlasticWaste", "imageQuality", "summary", "items"],
 };
 
 class GeminiHttpError extends Error {
@@ -204,6 +222,7 @@ async function generateDetection(
   return {
     isPlasticWaste: parsed.isPlasticWaste ?? false,
     imageQuality: parsed.imageQuality ?? "fair",
+    summary: typeof parsed.summary === "string" ? parsed.summary.trim() : "",
     items: Array.isArray(parsed.items) ? parsed.items : [],
   };
 }
@@ -233,6 +252,10 @@ function toBox(
   const label = (PLASTIC_CLASSES as readonly string[]).includes(item.label)
     ? item.label
     : "Other";
+  const resin =
+    item.resin && (RESIN_TYPES as readonly string[]).includes(item.resin)
+      ? item.resin
+      : undefined;
   return {
     x: xmin,
     y: ymin,
@@ -240,23 +263,35 @@ function toBox(
     h,
     label,
     confidence: clamp01(Number(item.confidence) || 0),
+    ...(resin ? { resin } : {}),
   };
 }
 
-function dominantClass(labels: string[]): string {
-  if (labels.length === 0) return "Other";
+function countByLabel(labels: string[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const label of labels) counts.set(label, (counts.get(label) ?? 0) + 1);
+  return counts;
+}
 
-  const pet = counts.get("PET Bottle") ?? 0;
-  const hdpe = counts.get("HDPE Bottle") ?? 0;
-  const containerish =
-    (counts.get("Container") ?? 0) + (counts.get("Cup") ?? 0);
-  if (pet + hdpe > 0 && pet + hdpe >= containerish) {
-    return pet >= hdpe ? "PET Bottle" : "HDPE Bottle";
+const MIXED_CLASS = "Mixed Plastic";
+
+/**
+ * Most frequent label (ties go to the label seen first), or "Mixed Plastic"
+ * when several types are present and none makes up most of the items.
+ */
+function dominantClass(counts: Map<string, number>): string {
+  let best = "Other";
+  let bestCount = 0;
+  let total = 0;
+  for (const [label, count] of counts) {
+    total += count;
+    if (count > bestCount) {
+      best = label;
+      bestCount = count;
+    }
   }
-
-  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]![0];
+  if (counts.size > 1 && bestCount / total < 0.6) return MIXED_CLASS;
+  return best;
 }
 
 function decisionFromConfidence(
@@ -330,21 +365,20 @@ export async function callAiDetect(
         .map(toBox)
         .filter((b): b is NonNullable<typeof b> => b !== null)
     : [];
-  const detectedClass = dominantClass(allBoxes.map((b) => b.label));
-  const classBoxes = allBoxes.filter((b) => b.label === detectedClass);
-  const scoredBoxes = classBoxes.length > 0 ? classBoxes : allBoxes;
+  const labelCounts = countByLabel(allBoxes.map((b) => b.label));
+  const detectedClass = dominantClass(labelCounts);
 
   let confidence =
-    scoredBoxes.length > 0
-      ? scoredBoxes.reduce((sum, b) => sum + b.confidence, 0) /
-        scoredBoxes.length
+    allBoxes.length > 0
+      ? allBoxes.reduce((sum, b) => sum + b.confidence, 0) / allBoxes.length
       : 0.2;
   if (detection.imageQuality === "poor") confidence -= 0.15;
   else if (detection.imageQuality === "fair") confidence -= 0.05;
   confidence = Math.round(clamp01(confidence) * 10000) / 10000;
 
-  const plasticTypes = [...new Set(allBoxes.map((b) => b.label))].sort();
-  const detectedCount = classBoxes.length;
+  const plasticTypes = [...labelCounts.keys()].sort();
+  // Count every item, not just the dominant type — mixed photos are common.
+  const detectedCount = allBoxes.length;
   const decision =
     detectedCount === 0
       ? confidence >= 0.35 && detection.isPlasticWaste
@@ -352,22 +386,22 @@ export async function callAiDetect(
         : "REJECT"
       : decisionFromConfidence(confidence);
 
-  const estimatedWeightGrams =
-    detectedCount === 0
-      ? 0
-      : estimatePlasticWeightGrams({
-          detectedClass,
-          detectedCount,
-          confidence,
-          plasticTypes: BOTTLE_CLASSES.has(detectedClass)
-            ? [detectedClass]
-            : plasticTypes,
-        });
+  const estimatedWeightGrams = [...labelCounts].reduce(
+    (sum, [label, count]) =>
+      sum +
+      estimatePlasticWeightGrams({
+        detectedClass: label,
+        detectedCount: count,
+        confidence,
+      }),
+    0,
+  );
 
   const parsedOutput = {
     detected_class: detectedCount === 0 ? "Other" : detectedClass,
     detected_count: detectedCount,
     plastic_types: plasticTypes,
+    label_counts: Object.fromEntries(labelCounts),
     decision,
     estimated_weight_grams: estimatedWeightGrams,
   };
@@ -377,9 +411,10 @@ export async function callAiDetect(
     detectedCount,
     confidence,
     decision,
-    boxes: classBoxes,
+    boxes: allBoxes,
     plasticTypes,
     estimatedWeightGrams,
+    summary: detection.summary,
     processingTimeMs: Date.now() - started,
     modelName: model,
     modelVersion: "gemini-api-v1beta",

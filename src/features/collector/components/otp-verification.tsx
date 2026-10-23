@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface OtpVerificationProps {
   verified: boolean;
   onVerified: () => void;
   disabled?: boolean;
+  locked?: boolean;
 }
 
 /**
@@ -24,7 +26,9 @@ export function OtpVerification({
   verified,
   onVerified,
   disabled,
+  locked = false,
 }: OtpVerificationProps) {
+  const router = useRouter();
   const [otp, setOtp] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -33,6 +37,8 @@ export function OtpVerification({
       const result = await verifyOtpAction({ pickupId, otp });
       if (!result.success) {
         toast.error(result.error);
+        // Re-sync so the lockout state appears as soon as the limit is hit.
+        router.refresh();
         return;
       }
       toast.success(result.message ?? "OTP verified");
@@ -48,6 +54,15 @@ export function OtpVerification({
           OTP verified — continue verification
         </span>
       </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <p className="text-destructive text-sm">
+        Too many incorrect OTP attempts. Contact an admin to continue this
+        pickup.
+      </p>
     );
   }
 

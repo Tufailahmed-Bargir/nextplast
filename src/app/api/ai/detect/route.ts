@@ -59,7 +59,11 @@ export async function POST(request: NextRequest) {
       listing.images.find((img) => img.id === parsed.data.listingImageId) ??
       listing.images[0];
     if (!image) {
-      return apiError("NO_IMAGES", "Upload an image before running detection.", 400);
+      return apiError(
+        "NO_IMAGES",
+        "Upload an image before running detection.",
+        400,
+      );
     }
 
     // Prevent duplicate processing for the same image hash on this listing.
@@ -71,13 +75,10 @@ export async function POST(request: NextRequest) {
         },
         orderBy: { createdAt: "desc" },
       });
-      const payload = existing?.rawPayload as
-        | { analysis?: { contentHash?: string } }
-        | null;
-      if (
-        existing &&
-        payload?.analysis?.contentHash === image.contentHash
-      ) {
+      const payload = existing?.rawPayload as {
+        analysis?: { contentHash?: string };
+      } | null;
+      if (existing && payload?.analysis?.contentHash === image.contentHash) {
         return apiSuccess({
           reused: true,
           detectionId: existing.id,
@@ -92,7 +93,11 @@ export async function POST(request: NextRequest) {
 
     const response = await fetch(image.url);
     if (!response.ok) {
-      return apiError("IMAGE_FETCH_FAILED", "Could not fetch listing image.", 502);
+      return apiError(
+        "IMAGE_FETCH_FAILED",
+        "Could not fetch listing image.",
+        502,
+      );
     }
     const buffer = Buffer.from(await response.arrayBuffer());
     const meta = validateImageBuffer(
@@ -141,8 +146,7 @@ export async function POST(request: NextRequest) {
         listingImageId: image.id,
         detectedClass: detection.detectedClass,
         detectedCount: detection.detectedCount,
-        userConfirmedCount:
-          parsed.data.userCount ?? detection.detectedCount,
+        userConfirmedCount: parsed.data.userCount ?? detection.detectedCount,
         userConfirmedClass: detection.detectedClass,
         confidence: detection.confidence,
         decision: detection.decision,
@@ -152,6 +156,7 @@ export async function POST(request: NextRequest) {
             boxes: detection.boxes,
             analysis: detection.analysis,
             plasticTypes: detection.plasticTypes,
+            summary: detection.summary ?? null,
             estimatedWeightGrams: detection.estimatedWeightGrams,
             processingTimeMs: detection.processingTimeMs,
             fraudAlerts: fraud,

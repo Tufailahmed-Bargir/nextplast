@@ -1,7 +1,10 @@
 import "server-only";
 
 import { prisma } from "@/prisma";
-import { decimalToNumber } from "@/features/dashboard/types";
+import {
+  decimalToNumber,
+  signedWalletAmount,
+} from "@/features/dashboard/types";
 
 export async function getAdminReports(input?: { from?: Date; to?: Date }) {
   const createdAt =
@@ -12,73 +15,67 @@ export async function getAdminReports(input?: { from?: Date; to?: Date }) {
         }
       : undefined;
 
-  const [
-    users,
-    listings,
-    inventory,
-    orders,
-    walletTx,
-    impact,
-  ] = await Promise.all([
-    prisma.user.findMany({
-      where: createdAt ? { createdAt } : undefined,
-      orderBy: { createdAt: "desc" },
-      take: 200,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-      },
-    }),
-    prisma.plasticListing.findMany({
-      where: {
-        deletedAt: null,
-        ...(createdAt ? { createdAt } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-      select: {
-        id: true,
-        status: true,
-        quality: true,
-        claimedWeightGrams: true,
-        actualWeightGrams: true,
-        estimatedCoins: true,
-        finalCoins: true,
-        createdAt: true,
-        user: { select: { email: true } },
-      },
-    }),
-    prisma.inventory.findMany({
-      orderBy: { updatedAt: "desc" },
-      take: 200,
-      include: {
-        category: { select: { name: true } },
-      },
-    }),
-    prisma.order.findMany({
-      where: createdAt ? { createdAt } : undefined,
-      orderBy: { createdAt: "desc" },
-      take: 200,
-      include: { user: { select: { email: true } } },
-    }),
-    prisma.walletTransaction.findMany({
-      where: createdAt ? { createdAt } : undefined,
-      orderBy: { createdAt: "desc" },
-      take: 200,
-      include: {
-        wallet: { include: { user: { select: { email: true } } } },
-      },
-    }),
-    prisma.environmentalImpact.findMany({
-      orderBy: { plasticRecycledGrams: "desc" },
-      take: 100,
-      include: { user: { select: { email: true, name: true } } },
-    }),
-  ]);
+  const [users, listings, inventory, orders, walletTx, impact] =
+    await Promise.all([
+      prisma.user.findMany({
+        where: createdAt ? { createdAt } : undefined,
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+      }),
+      prisma.plasticListing.findMany({
+        where: {
+          deletedAt: null,
+          ...(createdAt ? { createdAt } : {}),
+        },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        select: {
+          id: true,
+          status: true,
+          quality: true,
+          claimedWeightGrams: true,
+          actualWeightGrams: true,
+          estimatedCoins: true,
+          finalCoins: true,
+          createdAt: true,
+          user: { select: { email: true } },
+        },
+      }),
+      prisma.inventory.findMany({
+        orderBy: { updatedAt: "desc" },
+        take: 200,
+        include: {
+          category: { select: { name: true } },
+        },
+      }),
+      prisma.order.findMany({
+        where: createdAt ? { createdAt } : undefined,
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        include: { user: { select: { email: true } } },
+      }),
+      prisma.walletTransaction.findMany({
+        where: createdAt ? { createdAt } : undefined,
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        include: {
+          wallet: { include: { user: { select: { email: true } } } },
+        },
+      }),
+      prisma.environmentalImpact.findMany({
+        orderBy: { plasticRecycledGrams: "desc" },
+        take: 100,
+        include: { user: { select: { email: true, name: true } } },
+      }),
+    ]);
 
   return {
     users: users.map((u) => ({
@@ -121,7 +118,7 @@ export async function getAdminReports(input?: { from?: Date; to?: Date }) {
       id: t.id,
       type: t.type,
       status: t.status,
-      amount: decimalToNumber(t.amount),
+      amount: signedWalletAmount(t.type, decimalToNumber(t.amount)),
       userEmail: t.wallet.user.email,
       createdAt: t.createdAt,
     })),

@@ -2,11 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/prisma";
-import {
-  AuthHttpError,
-  requireAuth,
-} from "@/features/auth/services/guards";
+import { AuthHttpError, requireAuth } from "@/features/auth/services/guards";
 import {
   changePasswordSchema,
   profileUpdateSchema,
@@ -16,8 +14,7 @@ import {
 import { logger } from "@/utils/logger";
 
 export type SettingsActionResult =
-  | { success: true; message?: string }
-  | { success: false; error: string };
+  { success: true; message?: string } | { success: false; error: string };
 
 function mapAuth(error: unknown): string {
   if (error instanceof AuthHttpError) {
@@ -39,7 +36,10 @@ export async function updateProfileAction(
     const user = await requireAuth();
     const parsed = profileUpdateSchema.safeParse(raw);
     if (!parsed.success) {
-      return { success: false, error: "Check your profile fields and try again." };
+      return {
+        success: false,
+        error: "Check your profile fields and try again.",
+      };
     }
 
     const data = parsed.data;
@@ -99,14 +99,24 @@ export async function updatePreferencesAction(
       return { success: false, error: "Invalid preference values." };
     }
 
+    // Merge, don't replace: checkout stores savedAddresses in the same JSON column.
+    const existing = await prisma.userProfile.findUnique({
+      where: { userId: user.id },
+      select: { preferences: true },
+    });
+    const preferences = {
+      ...((existing?.preferences ?? {}) as Record<string, unknown>),
+      ...parsed.data,
+    } as Prisma.InputJsonValue;
+
     await prisma.userProfile.upsert({
       where: { userId: user.id },
       create: {
         userId: user.id,
-        preferences: parsed.data,
+        preferences,
         referralCode: makeReferralCode(user.id),
       },
-      update: { preferences: parsed.data },
+      update: { preferences },
     });
 
     revalidatePath("/settings");
@@ -133,7 +143,8 @@ export async function changePasswordAction(
     if (!dbUser?.passwordHash) {
       return {
         success: false,
-        error: "This account uses Google sign-in. Set a password via reset email first.",
+        error:
+          "This account uses Google sign-in. Set a password via reset email first.",
       };
     }
 
@@ -164,7 +175,10 @@ export async function softDeleteAccountAction(
     const user = await requireAuth();
     const parsed = softDeleteAccountSchema.safeParse(raw);
     if (!parsed.success) {
-      return { success: false, error: 'Type DELETE to confirm account removal.' };
+      return {
+        success: false,
+        error: "Type DELETE to confirm account removal.",
+      };
     }
 
     await prisma.user.update({
