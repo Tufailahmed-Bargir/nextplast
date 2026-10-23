@@ -6,9 +6,10 @@ import "server-only";
  */
 export function getAiServiceConfig() {
   const apiKey = (process.env.GEMINI_API_KEY ?? "").trim();
-  const model = (process.env.GEMINI_MODEL ?? "").trim() || "gemini-3.8-flash";
+  const model =
+    (process.env.GEMINI_MODEL ?? "").trim() || "gemini-3.5-flash-lite";
   const fallbackModel =
-    (process.env.GEMINI_FALLBACK_MODEL ?? "").trim() || "gemini-3.5-flash-lite";
+    (process.env.GEMINI_FALLBACK_MODEL ?? "").trim() || "gemini-3.8-flash";
   return {
     apiKey: apiKey || null,
     model,

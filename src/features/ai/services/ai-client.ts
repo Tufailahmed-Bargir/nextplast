@@ -23,6 +23,8 @@ export const PLASTIC_CLASSES = [
   "Other",
 ] as const;
 
+const PRIMARY_TIMEOUT_MS = 15_000;
+
 const BOTTLE_CLASSES = new Set<string>(["PET Bottle", "HDPE Bottle"]);
 
 export interface AiServiceDetectResult {
@@ -150,11 +152,13 @@ async function generateDetection(
   model: string,
   buffer: Buffer,
   mimeType: string,
+  timeoutMs?: number,
 ): Promise<GeminiDetection> {
   const response = await geminiFetch(
     `/models/${encodeURIComponent(model)}:generateContent`,
     {
       method: "POST",
+      timeoutMs,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [
@@ -276,7 +280,15 @@ export async function callAiDetect(
   let model = config.model;
   let detection: GeminiDetection;
   try {
-    detection = await generateDetection(model, buffer, mimeType);
+    // Cap the primary so an overloaded model hands off to the fallback quickly.
+    detection = await generateDetection(
+      model,
+      buffer,
+      mimeType,
+      config.fallbackModel
+        ? Math.min(PRIMARY_TIMEOUT_MS, config.timeoutMs)
+        : undefined,
+    );
   } catch (error) {
     if (!config.fallbackModel || !shouldTryFallback(error)) {
       logger.error(
