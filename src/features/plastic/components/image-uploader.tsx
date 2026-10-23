@@ -11,12 +11,29 @@ import {
   MAX_IMAGES_PER_LISTING,
 } from "@/validations/plastic";
 import {
+  prepareListingUploadAction,
   removeListingImageAction,
+  saveListingImagesAction,
   uploadListingImagesAction,
 } from "@/features/plastic/actions/sell-actions";
+import {
+  mapWithConcurrency,
+  uploadToCloudinary,
+} from "@/features/plastic/lib/direct-upload";
 import { CameraCaptureDialog } from "@/features/plastic/components/camera-capture-dialog";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/compress-image";
+import { optimizedImageUrl } from "@/utils/cloudinary-url";
+
+const UPLOAD_CONCURRENCY = 3;
+/** Raw photo limit before compression; the 10 MB cap applies after. */
+const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
+
+interface PendingUpload {
+  id: string;
+  previewUrl: string;
+  progress: number;
+}
 
 export interface ListingImageView {
   id: string;
@@ -33,6 +50,8 @@ interface ImageUploaderProps {
 
 /**
  * Multi-image uploader with camera capture, preview, validation, compression, and progress.
+ * Photos are compressed in the browser and uploaded straight to Cloudinary,
+ * a few at a time, with the server action path kept as a fallback.
  */
 export function ImageUploader({
   listingId,
@@ -44,6 +63,7 @@ export function ImageUploader({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
+  const [uploads, setUploads] = useState<PendingUpload[]>([]);
   const [pending, startTransition] = useTransition();
 
   function validateFiles(files: File[]): string | null {
@@ -51,15 +71,17 @@ export function ImageUploader({
       return `You can upload up to ${MAX_IMAGES_PER_LISTING} images.`;
     }
     for (const file of files) {
+      // Some Android cameras report no MIME type; compression re-encodes those.
       if (
+        file.type !== "" &&
         !ACCEPTED_IMAGE_TYPES.includes(
           file.type as (typeof ACCEPTED_IMAGE_TYPES)[number],
         )
       ) {
         return "Only JPEG, PNG, and WEBP images are allowed.";
       }
-      if (file.size > MAX_IMAGE_BYTES) {
-        return "Each image must be under 10 MB.";
+      if (file.size > MAX_SOURCE_BYTES) {
+        return "Each photo must be under 25 MB.";
       }
     }
     return null;
@@ -74,14 +96,65 @@ export function ImageUploader({
       return;
     }
 
+    // Show the photos immediately; they fill in as each upload finishes.
+    const items: PendingUpload[] = files.map((file, index) => ({
+      id: `${Date.now()}-${index}`,
+      previewUrl: URL.createObjectURL(file),
+      progress: 0,
+    }));
+    setUploads(items);
+    const setItemProgress = (id: string, value: number) =>
+      setUploads((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, progress: value } : u)),
+      );
+
     startTransition(async () => {
       try {
-        setProgress("Compressing…");
-        const compressed = await Promise.all(files.map(compressImage));
-        // One request per image keeps each body under Vercel's 4.5 MB function limit.
+        setProgress(`Uploading ${files.length} photo(s)…`);
+        // Signing and compression overlap so neither waits on the other.
+        const [ticket, compressed] = await Promise.all([
+          prepareListingUploadAction({ listingId, count: files.length }),
+          Promise.all(files.map((file) => compressImage(file))),
+        ]);
+        if (!ticket.success) {
+          toast.error(ticket.error);
+          return;
+        }
+        if (compressed.some((file) => file.size > MAX_IMAGE_BYTES)) {
+          toast.error("Each image must be under 10 MB.");
+          return;
+        }
+
+        const settled = await mapWithConcurrency(
+          compressed,
+          UPLOAD_CONCURRENCY,
+          (file, index) =>
+            uploadToCloudinary(file, ticket.data, (fraction) =>
+              setItemProgress(items[index]!.id, fraction),
+            ),
+        );
+
         let uploaded = 0;
-        for (const [index, file] of compressed.entries()) {
-          setProgress(`Uploading image ${index + 1} of ${compressed.length}…`);
+        const direct = settled.flatMap((s) =>
+          s.status === "fulfilled" ? [s.value] : [],
+        );
+        if (direct.length > 0) {
+          const saved = await saveListingImagesAction({
+            listingId,
+            images: direct,
+          });
+          if (!saved.success) {
+            toast.error(saved.error);
+            return;
+          }
+          uploaded += saved.data.uploaded;
+        }
+
+        // Anything the direct path could not send goes through our server instead.
+        const retry = compressed.filter(
+          (_, index) => settled[index]!.status === "rejected",
+        );
+        for (const file of retry) {
           const formData = new FormData();
           formData.set("listingId", listingId);
           formData.append("files", file);
@@ -92,11 +165,14 @@ export function ImageUploader({
           }
           uploaded += result.data.uploaded;
         }
+
         if (uploaded > 0) {
           toast.success(`Uploaded ${uploaded} image(s)`);
           await onChanged();
         }
       } finally {
+        items.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+        setUploads([]);
         setProgress(null);
         if (inputRef.current) inputRef.current.value = "";
         if (cameraInputRef.current) cameraInputRef.current.value = "";
@@ -194,7 +270,7 @@ export function ImageUploader({
         onUseUpload={() => inputRef.current?.click()}
       />
 
-      {images.length > 0 ? (
+      {images.length > 0 || uploads.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {images.map((image) => (
             <div
@@ -203,7 +279,7 @@ export function ImageUploader({
             >
               <div className="bg-muted relative aspect-video">
                 <Image
-                  src={image.url}
+                  src={optimizedImageUrl(image.url, 600)}
                   alt="Plastic upload"
                   fill
                   className="object-cover"
@@ -222,6 +298,37 @@ export function ImageUploader({
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
+            </div>
+          ))}
+          {uploads.map((upload) => (
+            <div
+              key={upload.id}
+              className="border-border relative overflow-hidden rounded-xl border"
+            >
+              <div className="bg-muted relative aspect-video">
+                {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview */}
+                <img
+                  src={upload.previewUrl}
+                  alt="Uploading plastic photo"
+                  className="h-full w-full object-cover opacity-70"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-white drop-shadow" />
+                </div>
+              </div>
+              <div
+                role="progressbar"
+                aria-label="Upload progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(upload.progress * 100)}
+                className="bg-muted absolute inset-x-0 bottom-0 h-1"
+              >
+                <div
+                  className="h-full bg-emerald-500 transition-[width] duration-200"
+                  style={{ width: `${Math.max(5, upload.progress * 100)}%` }}
+                />
+              </div>
             </div>
           ))}
         </div>

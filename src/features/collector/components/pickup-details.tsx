@@ -10,6 +10,7 @@ import {
   googleMapsSearchUrl,
 } from "@/features/collector/lib/maps";
 import { cn } from "@/lib/utils";
+import { optimizedImageUrl } from "@/utils/cloudinary-url";
 
 interface PickupDetailsProps {
   pickupId: string;
@@ -61,19 +62,19 @@ export function PickupDetails({
               {status.toLowerCase().replaceAll("_", " ")}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             #{pickupId.slice(0, 8)}
             {scheduledAt ? ` · ${formatDateTime(scheduledAt)}` : ""}
           </p>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <div className="rounded-xl bg-background/80 p-4">
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="bg-background/80 rounded-xl p-4">
+            <p className="text-muted-foreground flex items-center gap-1 text-xs">
               <MapPin className="h-3 w-3" /> Address
             </p>
             <p className="mt-1 font-semibold">{address}</p>
             {distanceKm != null ? (
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 ~{distanceKm} km away
               </p>
             ) : null}
@@ -82,7 +83,9 @@ export function PickupDetails({
                 href={googleMapsSearchUrl(address, { latitude, longitude })}
                 target="_blank"
                 rel="noreferrer"
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                )}
               >
                 Open in Maps <ExternalLink className="h-3.5 w-3.5" />
               </a>
@@ -90,26 +93,30 @@ export function PickupDetails({
                 href={googleMapsDirectionsUrl(address, { latitude, longitude })}
                 target="_blank"
                 rel="noreferrer"
-                className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "sm" }),
+                )}
               >
                 Directions
               </a>
             </div>
           </div>
 
-          <div className="rounded-xl bg-background/80 p-4">
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="bg-background/80 rounded-xl p-4">
+            <p className="text-muted-foreground flex items-center gap-1 text-xs">
               <User className="h-3 w-3" /> Customer
             </p>
             <p className="mt-1 font-semibold">{customerName ?? "Customer"}</p>
             {customerEmail ? (
-              <p className="text-xs text-muted-foreground">{customerEmail}</p>
+              <p className="text-muted-foreground text-xs">{customerEmail}</p>
             ) : null}
           </div>
 
           {notes ? (
             <p className="text-muted-foreground">
-              <span className="font-medium text-foreground">Instructions: </span>
+              <span className="text-foreground font-medium">
+                Instructions:{" "}
+              </span>
               {notes}
             </p>
           ) : null}
@@ -122,9 +129,9 @@ export function PickupDetails({
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {imageUrl ? (
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+            <div className="bg-muted relative aspect-video overflow-hidden rounded-xl">
               <Image
-                src={imageUrl}
+                src={optimizedImageUrl(imageUrl, 800)}
                 alt="Listing photo"
                 fill
                 className="object-cover"
@@ -133,8 +140,8 @@ export function PickupDetails({
               />
             </div>
           ) : null}
-          <div className="rounded-xl border border-border p-4">
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="border-border rounded-xl border p-4">
+            <p className="text-muted-foreground flex items-center gap-1 text-xs">
               <Package className="h-3 w-3" /> User claim (do not overwrite)
             </p>
             <p className="mt-1 font-semibold">
@@ -143,14 +150,14 @@ export function PickupDetails({
                 : "—"}
               {claimedQuantity != null ? ` · ${claimedQuantity} item(s)` : ""}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Quality claimed: {quality ?? "—"}
               {estimatedCoins != null
                 ? ` · ~${formatCoin(estimatedCoins)} est. coins`
                 : ""}
             </p>
             {aiSummary ? (
-              <p className="mt-2 text-xs text-muted-foreground">{aiSummary}</p>
+              <p className="text-muted-foreground mt-2 text-xs">{aiSummary}</p>
             ) : null}
           </div>
         </CardContent>

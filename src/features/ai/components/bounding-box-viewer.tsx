@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { optimizedImageUrl } from "@/utils/cloudinary-url";
 
 export interface BoxOverlay {
   x: number;
@@ -35,7 +36,11 @@ export function BoundingBoxViewer({
     >
       {/* Native img: wrapper height follows image aspect → box % coords stay correct */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={imageUrl} alt={alt} className="block h-auto w-full" />
+      <img
+        src={optimizedImageUrl(imageUrl, 1200)}
+        alt={alt}
+        className="block h-auto w-full"
+      />
       {boxes.map((box, i) => (
         <div
           key={`${box.label}-${i}`}

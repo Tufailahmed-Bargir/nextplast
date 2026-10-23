@@ -2,10 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { PlasticQuality } from "@prisma/client";
-import {
-  AuthHttpError,
-  requireRoles,
-} from "@/features/auth/services/guards";
+import { z } from "zod";
+import { AuthHttpError, requireRoles } from "@/features/auth/services/guards";
 import { rolePermissions } from "@/features/auth/services/permissions";
 import {
   createDraftListing,
@@ -20,6 +18,8 @@ import {
   submitListing,
   updatePickupAddress,
   uploadListingImages,
+  prepareDirectListingUpload,
+  saveDirectListingImages,
 } from "@/features/plastic/services/listing-service";
 import { ensurePlasticCategories } from "@/features/plastic/services/categories";
 import {
@@ -27,6 +27,7 @@ import {
   plasticDetailsSchema,
   reviewDetectionsSchema,
   updatePickupAddressSchema,
+  MAX_IMAGES_PER_LISTING,
 } from "@/validations/plastic";
 import { sniffImageMime } from "@/features/ai/services/plastic-detector";
 import { lookupPincode } from "@/features/geo/services/geo-service";
@@ -51,6 +52,7 @@ function mapError(error: unknown): string {
     LISTING_NOT_FOUND: "Listing not found.",
     LISTING_LOCKED: "This listing can no longer be edited.",
     TOO_MANY_IMAGES: "You can upload up to 6 images per listing.",
+    INVALID_UPLOAD: "Upload could not be verified. Please try again.",
     INVALID_IMAGE_TYPE: "Only JPEG, PNG, and WEBP images are allowed.",
     IMAGE_TOO_LARGE: "Each image must be under 10 MB.",
     NO_IMAGES: "Upload at least one plastic photo first.",
@@ -93,9 +95,7 @@ export async function startSellListingAction(): Promise<
 
 export async function getSellListingAction(
   listingId: string,
-): Promise<
-  SellActionResult<ReturnType<typeof serializeSellListing>>
-> {
+): Promise<SellActionResult<ReturnType<typeof serializeSellListing>>> {
   try {
     const user = await requireSellUser();
     const listing = await getListingForUser(listingId, user.id);
@@ -154,6 +154,74 @@ export async function uploadListingImagesAction(
     return { success: true, data: { uploaded: prepared.length } };
   } catch (error) {
     logger.error("uploadListingImages failed", { error }, "plastic");
+    return { success: false, error: mapError(error) };
+  }
+}
+
+const prepareUploadSchema = z.object({
+  listingId: z.string().min(1),
+  count: z.number().int().min(1).max(MAX_IMAGES_PER_LISTING),
+});
+
+/**
+ * Signs a direct browser → Cloudinary upload for this listing.
+ */
+export async function prepareListingUploadAction(raw: unknown): Promise<
+  SellActionResult<{
+    cloudName: string;
+    apiKey: string;
+    signature: string;
+    timestamp: number;
+    folder: string;
+    allowed_formats: string;
+  }>
+> {
+  try {
+    const user = await requireSellUser();
+    const parsed = prepareUploadSchema.safeParse(raw);
+    if (!parsed.success) return { success: false, error: "Invalid upload." };
+    const data = await prepareDirectListingUpload({
+      userId: user.id,
+      ...parsed.data,
+    });
+    return { success: true, data };
+  } catch (error) {
+    logger.error("prepareListingUpload failed", { error }, "plastic");
+    return { success: false, error: mapError(error) };
+  }
+}
+
+const saveImagesSchema = z.object({
+  listingId: z.string().min(1),
+  images: z
+    .array(
+      z.object({
+        publicId: z.string().min(1).max(300),
+        url: z.string().url().max(1000),
+        width: z.number().int().positive().optional(),
+        height: z.number().int().positive().optional(),
+        bytes: z.number().int().positive().optional(),
+      }),
+    )
+    .min(1)
+    .max(MAX_IMAGES_PER_LISTING),
+});
+
+/**
+ * Records images uploaded directly to Cloudinary from the browser.
+ */
+export async function saveListingImagesAction(
+  raw: unknown,
+): Promise<SellActionResult<{ uploaded: number }>> {
+  try {
+    const user = await requireSellUser();
+    const parsed = saveImagesSchema.safeParse(raw);
+    if (!parsed.success) return { success: false, error: "Invalid upload." };
+    await saveDirectListingImages({ userId: user.id, ...parsed.data });
+    revalidateSellPaths();
+    return { success: true, data: { uploaded: parsed.data.images.length } };
+  } catch (error) {
+    logger.error("saveListingImages failed", { error }, "plastic");
     return { success: false, error: mapError(error) };
   }
 }
@@ -323,7 +391,11 @@ export async function updatePickupAddressAction(
     revalidatePath("/admin", "layout");
     revalidatePath("/collector", "layout");
 
-    return { success: true, data: { ok: true }, message: "Pickup address updated." };
+    return {
+      success: true,
+      data: { ok: true },
+      message: "Pickup address updated.",
+    };
   } catch (error) {
     logger.error("updatePickupAddress failed", { error }, "plastic");
     return { success: false, error: mapError(error) };

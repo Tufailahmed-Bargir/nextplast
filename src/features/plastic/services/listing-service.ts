@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/prisma";
 import { deleteFile, uploadImage } from "@/utils/upload";
+import { signCloudinaryUpload } from "@/services/storage/cloudinary";
 import { logger } from "@/utils/logger";
 import {
   detectPlasticInImage,
@@ -227,6 +228,93 @@ export async function uploadListingImages(input: {
   return created;
 }
 
+const ALLOWED_UPLOAD_FORMATS = "jpg,jpeg,png,webp";
+const AI_DETECTION_CONCURRENCY = 3;
+
+function listingUploadFolder(listingId: string) {
+  return `nexplast/listings/${listingId}`;
+}
+
+async function assertRoomForImages(listingId: string, adding: number) {
+  const existingCount = await prisma.listingImage.count({
+    where: { listingId },
+  });
+  if (existingCount + adding > MAX_IMAGES_PER_LISTING) {
+    throw new Error("TOO_MANY_IMAGES");
+  }
+  return existingCount;
+}
+
+/**
+ * Signed params for uploading straight from the browser to Cloudinary.
+ * The folder is scoped to the listing, so saved images can be checked against it.
+ */
+export async function prepareDirectListingUpload(input: {
+  userId: string;
+  listingId: string;
+  count: number;
+}) {
+  const listing = await assertListingOwner(input.listingId, input.userId);
+  assertEditable(listing.status);
+  await assertRoomForImages(input.listingId, input.count);
+
+  const params = {
+    allowed_formats: ALLOWED_UPLOAD_FORMATS,
+    folder: listingUploadFolder(input.listingId),
+    timestamp: Math.floor(Date.now() / 1000),
+  };
+  return { ...params, ...signCloudinaryUpload(params) };
+}
+
+/**
+ * Records images the browser uploaded directly. Content hashes are filled in
+ * from the stored bytes when AI detection runs.
+ */
+export async function saveDirectListingImages(input: {
+  userId: string;
+  listingId: string;
+  images: {
+    publicId: string;
+    url: string;
+    width?: number;
+    height?: number;
+    bytes?: number;
+  }[];
+}) {
+  const listing = await assertListingOwner(input.listingId, input.userId);
+  assertEditable(listing.status);
+
+  const folder = `${listingUploadFolder(input.listingId)}/`;
+  const { cloudName } = signCloudinaryUpload({});
+  const urlPrefix = `https://res.cloudinary.com/${cloudName}/image/upload/`;
+  for (const image of input.images) {
+    if (
+      !image.publicId.startsWith(folder) ||
+      !image.url.startsWith(urlPrefix) ||
+      !image.url.includes(image.publicId) ||
+      (image.bytes ?? 0) > MAX_IMAGE_BYTES
+    ) {
+      throw new Error("INVALID_UPLOAD");
+    }
+  }
+
+  const existingCount = await assertRoomForImages(
+    input.listingId,
+    input.images.length,
+  );
+  await prisma.listingImage.createMany({
+    data: input.images.map((image, index) => ({
+      listingId: input.listingId,
+      url: image.url,
+      publicId: image.publicId,
+      width: image.width,
+      height: image.height,
+      bytes: image.bytes,
+      sortOrder: existingCount + index,
+    })),
+  });
+}
+
 export async function runListingAiDetection(input: {
   userId: string;
   listingId: string;
@@ -255,11 +343,12 @@ export async function runListingAiDetection(input: {
       orderBy: { createdAt: "desc" },
     });
 
-    let totalEstWeight = 0;
-    const keepImageIds: string[] = [];
-
-    for (const image of images) {
-      if (!image.publicId && !image.url) continue;
+    // Each photo is independent, so a few run at once; Gemini's free tier
+    // comfortably handles this many concurrent requests.
+    const processImage = async (
+      image: (typeof images)[number],
+    ): Promise<{ imageId: string; weightGrams: number } | null> => {
+      if (!image.publicId && !image.url) return null;
 
       const response = await fetch(image.url);
       if (!response.ok) {
@@ -286,9 +375,10 @@ export async function runListingAiDetection(input: {
         const payload = cached.rawPayload as {
           estimatedWeightGrams?: number;
         } | null;
-        totalEstWeight += Number(payload?.estimatedWeightGrams ?? 0);
-        keepImageIds.push(image.id);
-        continue;
+        return {
+          imageId: image.id,
+          weightGrams: Number(payload?.estimatedWeightGrams ?? 0),
+        };
       }
 
       const duplicate = await prisma.listingImage.findFirst({
@@ -373,9 +463,22 @@ export async function runListingAiDetection(input: {
         },
       });
 
-      totalEstWeight += detection.estimatedWeightGrams;
-      keepImageIds.push(image.id);
+      return { imageId: image.id, weightGrams: detection.estimatedWeightGrams };
+    };
+
+    const processed: ({ imageId: string; weightGrams: number } | null)[] = [];
+    for (let i = 0; i < images.length; i += AI_DETECTION_CONCURRENCY) {
+      processed.push(
+        ...(await Promise.all(
+          images.slice(i, i + AI_DETECTION_CONCURRENCY).map(processImage),
+        )),
+      );
     }
+    const done = processed.filter(
+      (r): r is { imageId: string; weightGrams: number } => r !== null,
+    );
+    const totalEstWeight = done.reduce((sum, r) => sum + r.weightGrams, 0);
+    const keepImageIds = done.map((r) => r.imageId);
 
     await prisma.aiDetectionResult.deleteMany({
       where: {

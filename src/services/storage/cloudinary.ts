@@ -43,9 +43,13 @@ export class CloudinaryStorageProvider implements StorageProvider {
         bytes: result.bytes,
       };
     } catch (error) {
-      logger.error("Cloudinary upload failed", {
-        error: error instanceof Error ? error.message : "unknown",
-      }, "storage");
+      logger.error(
+        "Cloudinary upload failed",
+        {
+          error: error instanceof Error ? error.message : "unknown",
+        },
+        "storage",
+      );
       throw new Error("Failed to upload file");
     }
   }
@@ -54,13 +58,32 @@ export class CloudinaryStorageProvider implements StorageProvider {
     try {
       await cloudinary.uploader.destroy(publicId);
     } catch (error) {
-      logger.error("Cloudinary delete failed", {
-        publicId,
-        error: error instanceof Error ? error.message : "unknown",
-      }, "storage");
+      logger.error(
+        "Cloudinary delete failed",
+        {
+          publicId,
+          error: error instanceof Error ? error.message : "unknown",
+        },
+        "storage",
+      );
       throw new Error("Failed to delete file");
     }
   }
 }
 
 export const storageProvider: StorageProvider = new CloudinaryStorageProvider();
+
+/**
+ * Signs browser-side direct uploads so files go straight to Cloudinary
+ * instead of through our functions. Only the signed params are accepted.
+ */
+export function signCloudinaryUpload(params: Record<string, string | number>) {
+  return {
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    apiKey: env.CLOUDINARY_API_KEY,
+    signature: cloudinary.utils.api_sign_request(
+      params,
+      env.CLOUDINARY_API_SECRET,
+    ),
+  };
+}

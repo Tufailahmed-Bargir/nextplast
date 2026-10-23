@@ -6,6 +6,7 @@ import { formatCoin, formatWeight } from "@/utils/coin";
 import { formatRelative } from "@/utils/date";
 import { getListingLifecycleLabel } from "@/features/plastic/services/status";
 import type { ListingStatus, PickupStatus } from "@prisma/client";
+import { optimizedImageUrl } from "@/utils/cloudinary-url";
 
 interface ListingCardProps {
   id: string;
@@ -40,12 +41,12 @@ export function ListingCard({
   });
   const coins = finalCoins ?? estimatedCoins;
   const content = (
-    <Card className="transition-all hover:-translate-y-0.5 hover:shadow-float">
+    <Card className="hover:shadow-float transition-all hover:-translate-y-0.5">
       <CardContent className="flex gap-3 py-4">
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+        <div className="bg-muted relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
           {imageUrl ? (
             <Image
-              src={imageUrl}
+              src={optimizedImageUrl(imageUrl, 160)}
               alt=""
               fill
               className="object-cover"
@@ -57,18 +58,18 @@ export function ListingCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{label}</Badge>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {formatRelative(createdAt)}
             </span>
           </div>
-          <p className="mt-1 truncate text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-1 truncate text-sm">
             #{id.slice(0, 8)}
             {claimedWeightGrams != null
               ? ` · ${formatWeight(claimedWeightGrams)}`
               : ""}
           </p>
           {coins != null ? (
-            <p className="mt-1 text-sm font-semibold coin-text">
+            <p className="coin-text mt-1 text-sm font-semibold">
               ~{formatCoin(Number(coins))} coins
             </p>
           ) : null}

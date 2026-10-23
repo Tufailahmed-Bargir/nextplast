@@ -4,13 +4,11 @@ import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  ACCEPTED_IMAGE_TYPES,
-  MAX_IMAGE_BYTES,
-} from "@/validations/collector";
+import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/validations/collector";
 import { uploadProofAction } from "@/features/collector/actions/collector-actions";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/utils/compress-image";
+import { optimizedImageUrl } from "@/utils/cloudinary-url";
 
 interface ProofUploaderProps {
   pickupId: string;
@@ -78,18 +76,18 @@ export function ProofUploader({
         onClick={() => inputRef.current?.click()}
         className={cn(
           "flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8",
-          "hover:border-sky-400 hover:bg-muted/40",
+          "hover:bg-muted/40 hover:border-sky-400",
         )}
       >
         {pending ? (
           <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
         ) : (
-          <Camera className="h-6 w-6 text-muted-foreground" />
+          <Camera className="text-muted-foreground h-6 w-6" />
         )}
         <p className="text-sm font-medium">
           {progress ?? "Upload proof photo"}
         </p>
-        <p className="text-xs text-muted-foreground">JPEG, PNG, or WEBP</p>
+        <p className="text-muted-foreground text-xs">JPEG, PNG, or WEBP</p>
       </button>
       <input
         ref={inputRef}
@@ -99,9 +97,9 @@ export function ProofUploader({
         onChange={(e) => onSelect(e.target.files)}
       />
       {proofUrl ? (
-        <div className="relative aspect-video overflow-hidden rounded-xl border border-border">
+        <div className="border-border relative aspect-video overflow-hidden rounded-xl border">
           <Image
-            src={proofUrl}
+            src={optimizedImageUrl(proofUrl, 800)}
             alt="Pickup proof"
             fill
             className="object-cover"
