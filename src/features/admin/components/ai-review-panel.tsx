@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { reviewListingAction } from "@/features/admin/actions/admin-actions";
 import { formatWeight } from "@/utils/coin";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 export interface AiReviewListing {
   id: string;
@@ -35,14 +36,14 @@ interface AiReviewPanelProps {
  */
 export function AiReviewPanel({ listings }: AiReviewPanelProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   function review(
     listingId: string,
     decision: "APPROVE" | "KEEP_REVIEW" | "REJECT",
   ) {
-    startTransition(async () => {
+    run(`${listingId}:${decision}`, async () => {
       const result = await reviewListingAction({
         listingId,
         decision,
@@ -61,21 +62,21 @@ export function AiReviewPanel({ listings }: AiReviewPanelProps) {
     <Card>
       <CardHeader>
         <CardTitle>AI review queue</CardTitle>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Review flagged detections and fraud alerts. Original AI values stay
           unchanged; actions are audit-logged.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {listings.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No listings pending AI/manual review.
           </p>
         ) : (
           listings.map((listing) => (
             <div
               key={listing.id}
-              className="space-y-3 rounded-xl border border-border p-4"
+              className="border-border space-y-3 rounded-xl border p-4"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
@@ -86,7 +87,7 @@ export function AiReviewPanel({ listings }: AiReviewPanelProps) {
                   {listing.user.name ?? listing.user.email}
                 </span>
                 {listing.claimedWeightGrams != null ? (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     Claimed {formatWeight(listing.claimedWeightGrams)}
                   </span>
                 ) : null}
@@ -94,10 +95,7 @@ export function AiReviewPanel({ listings }: AiReviewPanelProps) {
 
               <ul className="space-y-2 text-sm">
                 {listing.aiResults.map((ai) => (
-                  <li
-                    key={ai.id}
-                    className="rounded-lg bg-muted/40 px-3 py-2"
-                  >
+                  <li key={ai.id} className="bg-muted/40 rounded-lg px-3 py-2">
                     <p>
                       {ai.detectedClass}: AI {ai.detectedCount} / user{" "}
                       {ai.userConfirmedCount ?? ai.detectedCount} ·{" "}
@@ -131,6 +129,7 @@ export function AiReviewPanel({ listings }: AiReviewPanelProps) {
                   type="button"
                   size="sm"
                   disabled={pending}
+                  loading={isRunning(`${listing.id}:APPROVE`)}
                   onClick={() => review(listing.id, "APPROVE")}
                 >
                   Approve for collector
@@ -140,6 +139,7 @@ export function AiReviewPanel({ listings }: AiReviewPanelProps) {
                   size="sm"
                   variant="secondary"
                   disabled={pending}
+                  loading={isRunning(`${listing.id}:KEEP_REVIEW`)}
                   onClick={() => review(listing.id, "KEEP_REVIEW")}
                 >
                   Keep in review
@@ -149,6 +149,7 @@ export function AiReviewPanel({ listings }: AiReviewPanelProps) {
                   size="sm"
                   variant="destructive"
                   disabled={pending}
+                  loading={isRunning(`${listing.id}:REJECT`)}
                   onClick={() => review(listing.id, "REJECT")}
                 >
                   Reject

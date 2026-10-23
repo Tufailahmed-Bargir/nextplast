@@ -1,5 +1,5 @@
-import { PageLoading } from "@/components/shared/page-loading";
+import { PageSkeleton } from "@/components/shared/page-skeleton";
 
 export default function DashboardLoading() {
-  return <PageLoading label="Loading dashboard..." />;
+  return <PageSkeleton label="Loading dashboard…" />;
 }

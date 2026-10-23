@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import {
 } from "@/features/marketplace/actions/marketplace-actions";
 import { inrToNatureCoins } from "@/utils/coin";
 import { cn } from "@/lib/utils";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 function slugify(name: string) {
   return name
@@ -42,7 +43,7 @@ export function AdminProductForm({
   requestPrefill = null,
 }: AdminProductFormProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [form, setForm] = useState({
     name: requestPrefill?.title ?? "",
     slug: requestPrefill ? slugify(requestPrefill.title) : "",
@@ -58,11 +59,10 @@ export function AdminProductForm({
   const derivedCoins = inrToNatureCoins(Number(form.priceInr) || 0);
 
   function save() {
-    startTransition(async () => {
+    run("save", async () => {
       const priceInr = Number(form.priceInr);
       const autoSlug = slugify(form.name);
-      const slug =
-        form.slug.trim().length >= 2 ? slugify(form.slug) : autoSlug;
+      const slug = form.slug.trim().length >= 2 ? slugify(form.slug) : autoSlug;
       if (slug.length < 2) {
         toast.error("Name/slug must be at least 2 characters (e.g. eco-pen).");
         return;
@@ -108,7 +108,7 @@ export function AdminProductForm({
   }
 
   function seed() {
-    startTransition(async () => {
+    run("seed", async () => {
       const result = await seedMarketplaceCatalogAction();
       if (!result.success) {
         toast.error(result.error);
@@ -131,18 +131,20 @@ export function AdminProductForm({
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           {requestPrefill ? (
-            <div className="sm:col-span-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
-              <p className="font-medium text-foreground">
+            <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-sm sm:col-span-2 dark:border-emerald-900 dark:bg-emerald-950/40">
+              <p className="text-foreground font-medium">
                 Request from {requestPrefill.requesterName ?? "User"} (
                 {requestPrefill.requesterEmail})
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Role:{" "}
-                {requestPrefill.requesterRole.replaceAll("_", " ").toLowerCase()}
+                {requestPrefill.requesterRole
+                  .replaceAll("_", " ")
+                  .toLowerCase()}
               </p>
               <Link
                 href="/admin/product-requests"
-                className="text-xs font-medium text-primary hover:underline"
+                className="text-primary text-xs font-medium hover:underline"
               >
                 Back to requests
               </Link>
@@ -156,8 +158,7 @@ export function AdminProductForm({
                 const name = e.target.value;
                 setForm((f) => {
                   const prevAuto = slugify(f.name);
-                  const keepManual =
-                    f.slug.length > 0 && f.slug !== prevAuto;
+                  const keepManual = f.slug.length > 0 && f.slug !== prevAuto;
                   return {
                     ...f,
                     name,
@@ -176,18 +177,16 @@ export function AdminProductForm({
               }
               placeholder="eco-pen"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               URL id — auto from name. Min 2 chars (e.g. eco-pen).
             </p>
           </div>
           <div className="space-y-1.5">
             <Label>Category</Label>
             <select
-              className="h-10 w-full rounded-lg border border-input bg-transparent px-3 text-sm"
+              className="border-input h-10 w-full rounded-lg border bg-transparent px-3 text-sm"
               value={form.categoryId}
-              onChange={(e) =>
-                setForm({ ...form, categoryId: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             >
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -216,7 +215,7 @@ export function AdminProductForm({
           <div className="space-y-1.5">
             <Label>Price coins (auto)</Label>
             <Input type="number" value={String(derivedCoins)} readOnly />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               1 Nature Coin ≈ ₹0.50 → coins = ₹ price × 2
             </p>
           </div>
@@ -254,10 +253,11 @@ export function AdminProductForm({
           <Button
             type="button"
             disabled={pending || !form.categoryId}
+            loading={isRunning("save")}
             onClick={save}
             className="sm:col-span-2"
           >
-            {pending
+            {isRunning("save")
               ? "Saving…"
               : requestPrefill
                 ? "Create & notify requester"
@@ -270,13 +270,19 @@ export function AdminProductForm({
         <CardHeader>
           <CardTitle>Starter catalog</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground space-y-3 text-sm">
           <p>
             If the catalog is empty, seed baseline eco products into Prisma
             (idempotent — skips when products already exist).
           </p>
-          <Button type="button" variant="outline" disabled={pending} onClick={seed}>
-            Seed starter catalog
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            loading={isRunning("seed")}
+            onClick={seed}
+          >
+            {isRunning("seed") ? "Seeding…" : "Seed starter catalog"}
           </Button>
           {requestPrefill ? (
             <Link

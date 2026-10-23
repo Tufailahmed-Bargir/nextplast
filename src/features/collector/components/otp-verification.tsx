@@ -44,7 +44,9 @@ export function OtpVerification({
     return (
       <div className="flex items-center gap-2 text-emerald-600">
         <CheckCircle2 className="h-5 w-5" />
-        <span className="font-semibold">OTP verified — continue verification</span>
+        <span className="font-semibold">
+          OTP verified — continue verification
+        </span>
       </div>
     );
   }
@@ -58,7 +60,9 @@ export function OtpVerification({
         <Input
           value={otp}
           onChange={(e) =>
-            setOtp(e.target.value.replace(/\D/g, "").slice(0, COLLECTOR_OTP_LENGTH))
+            setOtp(
+              e.target.value.replace(/\D/g, "").slice(0, COLLECTOR_OTP_LENGTH),
+            )
           }
           placeholder={`${COLLECTOR_OTP_LENGTH}-digit OTP`}
           maxLength={COLLECTOR_OTP_LENGTH}
@@ -68,9 +72,10 @@ export function OtpVerification({
         <Button
           type="button"
           onClick={submit}
-          disabled={disabled || pending || otp.length !== COLLECTOR_OTP_LENGTH}
+          disabled={disabled || otp.length !== COLLECTOR_OTP_LENGTH}
+          loading={pending}
         >
-          Verify OTP
+          {pending ? "Verifying…" : "Verify OTP"}
         </Button>
       </div>
     </div>

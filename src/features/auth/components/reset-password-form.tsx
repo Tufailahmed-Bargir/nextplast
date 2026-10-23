@@ -56,10 +56,10 @@ function ResetPasswordFormInner() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="font-display text-3xl font-bold text-foreground">
+      <h1 className="font-display text-foreground text-3xl font-bold">
         Reset password
       </h1>
-      <p className="mt-2 text-muted-foreground">
+      <p className="text-muted-foreground mt-2">
         Choose a strong new password for your NexPlast account.
       </p>
 
@@ -67,7 +67,7 @@ function ResetPasswordFormInner() {
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="email"
               type="email"
@@ -77,14 +77,14 @@ function ResetPasswordFormInner() {
             />
           </div>
           {errors.email ? (
-            <p className="text-sm text-destructive">{errors.email.message}</p>
+            <p className="text-destructive text-sm">{errors.email.message}</p>
           ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="token">Reset token</Label>
           <div className="relative">
-            <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <KeyRound className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="token"
               className="pl-10 font-mono text-xs"
@@ -92,14 +92,14 @@ function ResetPasswordFormInner() {
             />
           </div>
           {errors.token ? (
-            <p className="text-sm text-destructive">{errors.token.message}</p>
+            <p className="text-destructive text-sm">{errors.token.message}</p>
           ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="password">New password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="password"
               type="password"
@@ -109,14 +109,16 @@ function ResetPasswordFormInner() {
             />
           </div>
           {errors.password ? (
-            <p className="text-sm text-destructive">{errors.password.message}</p>
+            <p className="text-destructive text-sm">
+              {errors.password.message}
+            </p>
           ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="confirmPassword"
               type="password"
@@ -126,13 +128,13 @@ function ResetPasswordFormInner() {
             />
           </div>
           {errors.confirmPassword ? (
-            <p className="text-sm text-destructive">
+            <p className="text-destructive text-sm">
               {errors.confirmPassword.message}
             </p>
           ) : null}
         </div>
 
-        <Button type="submit" className="w-full" disabled={pending} size="lg">
+        <Button type="submit" className="w-full" loading={pending} size="lg">
           {pending ? "Updating..." : "Update password"}
         </Button>
       </form>
@@ -140,7 +142,7 @@ function ResetPasswordFormInner() {
       <p className="mt-8 text-center text-sm">
         <Link
           href="/login"
-          className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+          className="text-primary inline-flex items-center gap-1 font-medium hover:underline"
         >
           <ArrowLeft className="h-4 w-4" /> Back to login
         </Link>
@@ -152,7 +154,7 @@ function ResetPasswordFormInner() {
 export function ResetPasswordForm() {
   return (
     <Suspense
-      fallback={<div className="text-sm text-muted-foreground">Loading...</div>}
+      fallback={<div className="text-muted-foreground text-sm">Loading...</div>}
     >
       <ResetPasswordFormInner />
     </Suspense>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { adjustInventoryAction } from "@/features/admin/actions/admin-actions";
 import { formatWeight } from "@/utils/coin";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 export interface InventoryTableRow {
   id: string;
@@ -25,7 +26,7 @@ interface InventoryTableProps {
 
 export function InventoryTable({ rows }: InventoryTableProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [deltas, setDeltas] = useState<Record<string, string>>({});
 
   function adjust(id: string) {
@@ -34,7 +35,7 @@ export function InventoryTable({ rows }: InventoryTableProps) {
       toast.error("Enter a non-zero gram delta.");
       return;
     }
-    startTransition(async () => {
+    run(id, async () => {
       const result = await adjustInventoryAction({
         inventoryId: id,
         deltaGrams: delta,
@@ -54,27 +55,29 @@ export function InventoryTable({ rows }: InventoryTableProps) {
     <Card>
       <CardHeader>
         <CardTitle>Inventory</CardTitle>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Platform and recycler stock from collector handoffs.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No inventory yet. Complete collector verifications to stock plastic.
           </p>
         ) : (
           rows.map((row) => (
             <div
               key={row.id}
-              className="flex flex-col gap-3 rounded-xl border border-border p-4 lg:flex-row lg:items-center lg:justify-between"
+              className="border-border flex flex-col gap-3 rounded-xl border p-4 lg:flex-row lg:items-center lg:justify-between"
             >
               <div>
                 <p className="font-semibold">
                   {row.category} · Grade {row.grade}
                 </p>
-                <div className="mt-1 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                  <Badge variant="secondary">{row.ownerType.toLowerCase()}</Badge>
+                <div className="text-muted-foreground mt-1 flex flex-wrap gap-2 text-sm">
+                  <Badge variant="secondary">
+                    {row.ownerType.toLowerCase()}
+                  </Badge>
                   <Badge variant="secondary">{row.status.toLowerCase()}</Badge>
                   <span>{formatWeight(row.quantityGrams)}</span>
                 </div>
@@ -93,6 +96,7 @@ export function InventoryTable({ rows }: InventoryTableProps) {
                   type="button"
                   size="sm"
                   disabled={pending}
+                  loading={isRunning(row.id)}
                   onClick={() => adjust(row.id)}
                 >
                   Adjust

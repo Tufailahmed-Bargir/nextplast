@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { upsertSettingAction } from "@/features/admin/actions/admin-actions";
 import { SETTING_KEYS } from "@/validations/admin";
+import { usePendingAction } from "@/hooks/use-pending-action";
 import type {
   GeneralSettings,
   MarketplaceSettings,
@@ -30,18 +31,14 @@ export function SettingsForm({
   notifications,
 }: SettingsFormProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [g, setG] = useState(general);
   const [m, setM] = useState(marketplace);
   const [w, setW] = useState(wallet);
   const [n, setN] = useState(notifications);
 
-  function save(
-    key: string,
-    label: string,
-    value: Record<string, unknown>,
-  ) {
-    startTransition(async () => {
+  function save(key: string, label: string, value: Record<string, unknown>) {
+    run(key, async () => {
       const result = await upsertSettingAction({ key, label, value });
       if (!result.success) {
         toast.error(result.error);
@@ -76,6 +73,7 @@ export function SettingsForm({
           <Button
             type="button"
             disabled={pending}
+            loading={isRunning(SETTING_KEYS.general)}
             onClick={() =>
               save(SETTING_KEYS.general, "General settings", { ...g })
             }
@@ -111,6 +109,7 @@ export function SettingsForm({
           <Button
             type="button"
             disabled={pending}
+            loading={isRunning(SETTING_KEYS.marketplace)}
             onClick={() =>
               save(SETTING_KEYS.marketplace, "Marketplace settings", { ...m })
             }
@@ -151,6 +150,7 @@ export function SettingsForm({
           <Button
             type="button"
             disabled={pending}
+            loading={isRunning(SETTING_KEYS.wallet)}
             onClick={() =>
               save(SETTING_KEYS.wallet, "Wallet settings", { ...w })
             }
@@ -188,6 +188,7 @@ export function SettingsForm({
           <Button
             type="button"
             disabled={pending}
+            loading={isRunning(SETTING_KEYS.notifications)}
             onClick={() =>
               save(SETTING_KEYS.notifications, "Notification settings", {
                 ...n,

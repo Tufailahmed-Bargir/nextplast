@@ -64,7 +64,12 @@ export function PurchaseLotForm({
           required
         />
       </div>
-      <Button type="submit" size="sm" disabled={pending || availableGrams <= 0}>
+      <Button
+        type="submit"
+        size="sm"
+        disabled={availableGrams <= 0}
+        loading={pending}
+      >
         Buy (max {formatWeight(availableGrams)})
       </Button>
     </form>

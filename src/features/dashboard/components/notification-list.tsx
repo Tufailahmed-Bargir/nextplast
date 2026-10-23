@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Trash2 } from "lucide-react";
+import { Bell, Loader2, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { DashboardEmpty } from "@/features/dashboard/components/dashboard-empty";
 import {
   deleteNotificationAction,
@@ -15,6 +16,7 @@ import {
 import { formatRelative } from "@/utils/date";
 import type { NotificationItem } from "@/features/dashboard/types";
 import { cn } from "@/lib/utils";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 interface NotificationListProps {
   notifications: NotificationItem[];
@@ -36,7 +38,7 @@ export function NotificationList({
   interactive = false,
 }: NotificationListProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run, isRunning } = usePendingAction();
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
@@ -54,7 +56,7 @@ export function NotificationList({
 
   function openNotification(n: NotificationItem) {
     if (!n.href) return;
-    startTransition(async () => {
+    run(n.id, async () => {
       if (!n.readAt) {
         const fd = new FormData();
         fd.set("id", n.id);
@@ -77,7 +79,7 @@ export function NotificationList({
           {showHeaderLink ? (
             <Link
               href="/notifications"
-              className="text-sm font-medium text-primary hover:underline"
+              className="text-primary text-sm font-medium hover:underline"
             >
               View all
             </Link>
@@ -97,7 +99,7 @@ export function NotificationList({
               </Button>
             ))}
             <select
-              className="h-7 rounded-lg border border-border bg-background px-2 text-xs"
+              className="border-border bg-background h-7 rounded-lg border px-2 text-xs"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
               aria-label="Filter by type"
@@ -132,8 +134,9 @@ export function NotificationList({
                     unread
                       ? "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/40"
                       : "border-border/60",
-                    clickable && "cursor-pointer transition hover:border-emerald-400/60",
-                    pending && "opacity-80",
+                    clickable &&
+                      "cursor-pointer transition hover:border-emerald-400/60",
+                    isRunning(n.id) && "opacity-70",
                   )}
                   onClick={clickable ? () => openNotification(n) : undefined}
                   onKeyDown={
@@ -150,17 +153,26 @@ export function NotificationList({
                   tabIndex={clickable ? 0 : undefined}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground">{n.title}</p>
-                    {unread ? (
+                    <p className="text-foreground text-sm font-medium">
+                      {n.title}
+                    </p>
+                    {isRunning(n.id) ? (
+                      <Loader2
+                        className="h-4 w-4 shrink-0 animate-spin text-emerald-600"
+                        aria-label="Opening"
+                      />
+                    ) : unread ? (
                       <span
                         className="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500"
                         aria-hidden
                       />
                     ) : null}
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {n.body}
+                  </p>
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       {formatRelative(n.createdAt)} · {n.type.toLowerCase()}
                       {n.href ? " · tap to open" : ""}
                     </p>
@@ -172,21 +184,20 @@ export function NotificationList({
                         {unread ? (
                           <form action={markNotificationReadAction}>
                             <input type="hidden" name="id" value={n.id} />
-                            <Button type="submit" size="xs" variant="outline">
+                            <SubmitButton size="xs" variant="outline">
                               Mark read
-                            </Button>
+                            </SubmitButton>
                           </form>
                         ) : null}
                         <form action={deleteNotificationAction}>
                           <input type="hidden" name="id" value={n.id} />
-                          <Button
-                            type="submit"
+                          <SubmitButton
                             size="xs"
                             variant="ghost"
                             aria-label="Delete notification"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          </SubmitButton>
                         </form>
                       </div>
                     ) : null}

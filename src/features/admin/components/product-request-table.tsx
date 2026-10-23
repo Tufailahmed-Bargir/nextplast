@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
 import { toast } from "sonner";
 import type { ProductRequestStatus, UserRole } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { rejectProductRequestAction } from "@/features/admin/actions/admin-actions";
 import { formatDateTime } from "@/utils/date";
 import { cn } from "@/lib/utils";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 export interface ProductRequestRow {
   id: string;
@@ -33,10 +33,10 @@ interface ProductRequestTableProps {
 
 export function ProductRequestTable({ requests }: ProductRequestTableProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
 
   function reject(requestId: string) {
-    startTransition(async () => {
+    run(requestId, async () => {
       const result = await rejectProductRequestAction({ requestId });
       if (!result.success) {
         toast.error(result.error);
@@ -58,7 +58,7 @@ export function ProductRequestTable({ requests }: ProductRequestTableProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {open.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No open product requests right now.
             </p>
           ) : (
@@ -67,6 +67,7 @@ export function ProductRequestTable({ requests }: ProductRequestTableProps) {
                 key={request.id}
                 request={request}
                 pending={pending}
+                rejecting={isRunning(request.id)}
                 onReject={() => reject(request.id)}
               />
             ))
@@ -83,18 +84,18 @@ export function ProductRequestTable({ requests }: ProductRequestTableProps) {
             {others.map((request) => (
               <div
                 key={request.id}
-                className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-border/60 p-3 text-sm"
+                className="border-border/60 flex flex-wrap items-start justify-between gap-2 rounded-xl border p-3 text-sm"
               >
                 <div className="space-y-1">
                   <p className="font-medium">{request.title}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {request.user.name ?? "User"} · {request.user.email} ·{" "}
                     {request.user.role.toLowerCase()}
                   </p>
                   {request.fulfilledProduct ? (
                     <Link
                       href={`/marketplace/${request.fulfilledProduct.slug}`}
-                      className="text-xs font-medium text-primary hover:underline"
+                      className="text-primary text-xs font-medium hover:underline"
                     >
                       Listed: {request.fulfilledProduct.name}
                     </Link>
@@ -115,24 +116,26 @@ export function ProductRequestTable({ requests }: ProductRequestTableProps) {
 function RequestCard({
   request,
   pending,
+  rejecting,
   onReject,
 }: {
   request: ProductRequestRow;
   pending: boolean;
+  rejecting: boolean;
   onReject: () => void;
 }) {
   return (
-    <div className="space-y-3 rounded-xl border border-border p-4">
+    <div className="border-border space-y-3 rounded-xl border p-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">open</Badge>
         <span className="text-sm font-semibold">{request.title}</span>
       </div>
-      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+      <p className="text-muted-foreground text-sm whitespace-pre-wrap">
         {request.description}
       </p>
-      <div className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+      <div className="bg-muted/50 text-muted-foreground rounded-lg px-3 py-2 text-xs">
         <p>
-          <span className="font-medium text-foreground">
+          <span className="text-foreground font-medium">
             {request.user.name ?? "User"}
           </span>{" "}
           · {request.user.email}
@@ -158,6 +161,7 @@ function RequestCard({
           size="sm"
           variant="outline"
           disabled={pending}
+          loading={rejecting}
           onClick={onReject}
         >
           Reject

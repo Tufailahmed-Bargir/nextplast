@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Heart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { toggleWishlistAction } from "@/features/marketplace/actions/marketplace-actions";
@@ -44,16 +44,21 @@ export function WishlistButton({
       onClick={toggle}
       aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
       className={cn(
-        "flex h-9 w-9 items-center justify-center rounded-full bg-background/80 backdrop-blur transition hover:scale-110",
+        "bg-background/80 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur transition hover:scale-110",
         className,
       )}
+      aria-busy={pending || undefined}
     >
-      <Heart
-        className={cn(
-          "h-4 w-4",
-          wished ? "fill-red-500 text-red-500" : "text-foreground",
-        )}
-      />
+      {pending ? (
+        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+      ) : (
+        <Heart
+          className={cn(
+            "h-4 w-4",
+            wished ? "fill-red-500 text-red-500" : "text-foreground",
+          )}
+        />
+      )}
     </button>
   );
 }

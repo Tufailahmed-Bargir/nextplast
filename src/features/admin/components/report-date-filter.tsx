@@ -10,6 +10,7 @@ export function ReportDateFilter() {
   const router = useRouter();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
+  const [action, setAction] = useState<"apply" | "clear">("apply");
   const [from, setFrom] = useState(params.get("from") ?? "");
   const [to, setTo] = useState(params.get("to") ?? "");
 
@@ -17,6 +18,7 @@ export function ReportDateFilter() {
     const next = new URLSearchParams();
     if (from) next.set("from", from);
     if (to) next.set("to", to);
+    setAction("apply");
     startTransition(() => {
       router.push(`/admin/reports?${next.toString()}`);
     });
@@ -25,13 +27,14 @@ export function ReportDateFilter() {
   function clear() {
     setFrom("");
     setTo("");
+    setAction("clear");
     startTransition(() => {
       router.push("/admin/reports");
     });
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-end">
+    <div className="border-border flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-end">
       <div className="space-y-1.5">
         <Label htmlFor="from">From</Label>
         <Input
@@ -51,13 +54,19 @@ export function ReportDateFilter() {
         />
       </div>
       <div className="flex gap-2">
-        <Button type="button" disabled={pending} onClick={apply}>
+        <Button
+          type="button"
+          disabled={pending}
+          loading={pending && action === "apply"}
+          onClick={apply}
+        >
           Apply
         </Button>
         <Button
           type="button"
           variant="outline"
           disabled={pending}
+          loading={pending && action === "clear"}
           onClick={clear}
         >
           Clear

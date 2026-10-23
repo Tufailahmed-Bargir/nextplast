@@ -1,6 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,6 +12,7 @@ import {
 } from "@/features/marketplace/actions/marketplace-actions";
 import { formatCoin, formatInr } from "@/utils/coin";
 import { cn } from "@/lib/utils";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 interface WishlistClientProps {
   items: {
@@ -30,7 +30,7 @@ interface WishlistClientProps {
 
 export function WishlistClient({ items }: WishlistClientProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
 
   if (items.length === 0) {
     return (
@@ -53,7 +53,7 @@ export function WishlistClient({ items }: WishlistClientProps) {
       {items.map((item) => (
         <Card key={item.productId}>
           <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-            <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-muted">
+            <div className="bg-muted relative h-20 w-20 overflow-hidden rounded-xl">
               {item.product.imageUrl ? (
                 <Image
                   src={item.product.imageUrl}
@@ -71,7 +71,7 @@ export function WishlistClient({ items }: WishlistClientProps) {
               >
                 {item.product.name}
               </Link>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {formatCoin(item.product.priceCoins)} ·{" "}
                 {formatInr(item.product.priceInr)}
               </p>
@@ -81,8 +81,9 @@ export function WishlistClient({ items }: WishlistClientProps) {
                 type="button"
                 size="sm"
                 disabled={pending || item.product.stock <= 0}
+                loading={isRunning(`move:${item.productId}`)}
                 onClick={() =>
-                  startTransition(async () => {
+                  run(`move:${item.productId}`, async () => {
                     const result = await moveWishlistToCartAction(
                       item.productId,
                     );
@@ -102,8 +103,9 @@ export function WishlistClient({ items }: WishlistClientProps) {
                 size="sm"
                 variant="outline"
                 disabled={pending}
+                loading={isRunning(`remove:${item.productId}`)}
                 onClick={() =>
-                  startTransition(async () => {
+                  run(`remove:${item.productId}`, async () => {
                     const result = await toggleWishlistAction({
                       productId: item.productId,
                     });

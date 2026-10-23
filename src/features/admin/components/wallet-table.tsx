@@ -58,13 +58,13 @@ export function WalletTable({ transactions, users }: WalletTableProps) {
       <Card>
         <CardHeader>
           <CardTitle>Wallet adjustment</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Manual Nature Coin adjust with audit log (server-side only).
           </p>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2">
           <select
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm"
+            className="border-input h-10 rounded-lg border bg-transparent px-3 text-sm"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
           >
@@ -87,13 +87,14 @@ export function WalletTable({ transactions, users }: WalletTableProps) {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground md:col-span-2">
+          <p className="text-muted-foreground text-xs md:col-span-2">
             Reason is required (≥ 5 characters) so every manual coin change is
             auditable.
           </p>
           <Button
             type="button"
-            disabled={pending || !userId}
+            disabled={!userId}
+            loading={pending}
             onClick={submit}
           >
             Apply adjustment
@@ -107,24 +108,26 @@ export function WalletTable({ transactions, users }: WalletTableProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           {transactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No transactions yet.</p>
+            <p className="text-muted-foreground text-sm">
+              No transactions yet.
+            </p>
           ) : (
             transactions.map((tx) => (
               <div
                 key={tx.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2 text-sm"
+                className="bg-muted/40 flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm"
               >
                 <div>
                   <p className="font-medium">
                     {tx.userName} · {tx.title ?? tx.type}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {formatDateTime(tx.createdAt)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{tx.type.toLowerCase()}</Badge>
-                  <span className="font-semibold coin-text">
+                  <span className="coin-text font-semibold">
                     {formatCoin(tx.amount)}
                   </span>
                 </div>

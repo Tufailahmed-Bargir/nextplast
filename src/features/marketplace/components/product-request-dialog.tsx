@@ -132,7 +132,8 @@ export function ProductRequestDialog({
           <Button
             type="button"
             onClick={submit}
-            disabled={pending || title.trim().length < 2 || description.trim().length < 10}
+            disabled={title.trim().length < 2 || description.trim().length < 10}
+            loading={pending}
           >
             {pending ? "Sending…" : "Send request"}
           </Button>

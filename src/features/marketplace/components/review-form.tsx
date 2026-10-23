@@ -20,8 +20,9 @@ export function ReviewForm({ productId, canReview }: ReviewFormProps) {
 
   if (!canReview) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Only verified buyers with a delivered order can submit reviews for this product.
+      <p className="text-muted-foreground text-sm">
+        Only verified buyers with a delivered order can submit reviews for this
+        product.
       </p>
     );
   }
@@ -44,7 +45,7 @@ export function ReviewForm({ productId, canReview }: ReviewFormProps) {
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-border p-4">
+    <div className="border-border space-y-3 rounded-xl border p-4">
       <p className="font-medium">Write a review</p>
       <div className="flex gap-2">
         {[1, 2, 3, 4, 5].map((n) => (
@@ -67,7 +68,7 @@ export function ReviewForm({ productId, canReview }: ReviewFormProps) {
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
-      <Button type="button" disabled={pending} onClick={submit}>
+      <Button type="button" loading={pending} onClick={submit}>
         {pending ? "Submitting…" : "Submit review"}
       </Button>
     </div>

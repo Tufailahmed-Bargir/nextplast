@@ -32,7 +32,7 @@ export function AssignPickupForm({
 
   if (collectors.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         No collectors available. Assign the Collector role from Users first.
       </p>
     );
@@ -59,7 +59,8 @@ export function AssignPickupForm({
       <Button
         type="button"
         size="sm"
-        disabled={pending || !collectorId}
+        disabled={!collectorId}
+        loading={pending}
         onClick={() => {
           startTransition(async () => {
             const result = await assignPickupAction({

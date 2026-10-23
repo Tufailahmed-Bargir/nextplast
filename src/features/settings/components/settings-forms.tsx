@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { usePendingAction } from "@/hooks/use-pending-action";
 import {
   changePasswordAction,
   softDeleteAccountAction,
@@ -34,16 +35,16 @@ interface SettingsFormsProps {
 }
 
 export function SettingsForms({ initial }: SettingsFormsProps) {
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [prefs, setPrefs] = useState(initial.preferences);
   const [deleteConfirm, setDeleteConfirm] = useState("");
 
   return (
     <div className="space-y-8">
-      <section className="space-y-4 rounded-2xl border border-border p-5">
+      <section className="border-border space-y-4 rounded-2xl border p-5">
         <div>
           <h3 className="font-display text-lg font-semibold">Profile</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Personal information shown on your recycler profile.
           </p>
         </div>
@@ -52,7 +53,7 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
           onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
-            startTransition(async () => {
+            run("profile", async () => {
               const result = await updateProfileAction({
                 name: String(fd.get("name") ?? ""),
                 phone: String(fd.get("phone") ?? ""),
@@ -83,33 +84,43 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="address">Address</Label>
-            <Textarea id="address" name="address" defaultValue={initial.address} rows={2} />
+            <Textarea
+              id="address"
+              name="address"
+              defaultValue={initial.address}
+              rows={2}
+            />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="bio">Bio</Label>
             <Textarea id="bio" name="bio" defaultValue={initial.bio} rows={3} />
           </div>
           {initial.referralCode ? (
-            <p className="sm:col-span-2 text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm sm:col-span-2">
               Referral code:{" "}
-              <span className="font-mono font-medium text-foreground">
+              <span className="text-foreground font-mono font-medium">
                 {initial.referralCode}
               </span>
             </p>
           ) : null}
           <div className="sm:col-span-2">
-            <Button type="submit" disabled={pending}>
+            <Button
+              type="submit"
+              disabled={pending}
+              loading={isRunning("profile")}
+            >
               Save profile
             </Button>
           </div>
         </form>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-border p-5">
+      <section className="border-border space-y-4 rounded-2xl border p-5">
         <div>
           <h3 className="font-display text-lg font-semibold">Preferences</h3>
-          <p className="text-sm text-muted-foreground">
-            Theme is controlled from the navbar. Manage notifications, language, and privacy here.
+          <p className="text-muted-foreground text-sm">
+            Theme is controlled from the navbar. Manage notifications, language,
+            and privacy here.
           </p>
         </div>
         <div className="space-y-4">
@@ -136,7 +147,7 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
             <Label htmlFor="language">Language</Label>
             <select
               id="language"
-              className="flex h-9 w-full rounded-lg border border-border bg-background px-3 text-sm"
+              className="border-border bg-background flex h-9 w-full rounded-lg border px-3 text-sm"
               value={prefs.language}
               onChange={(e) =>
                 setPrefs((p) => ({
@@ -152,8 +163,9 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
           <Button
             type="button"
             disabled={pending}
+            loading={isRunning("preferences")}
             onClick={() =>
-              startTransition(async () => {
+              run("preferences", async () => {
                 const result = await updatePreferencesAction(prefs);
                 if (result.success) toast.success(result.message);
                 else toast.error(result.error);
@@ -165,10 +177,10 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-border p-5">
+      <section className="border-border space-y-4 rounded-2xl border p-5">
         <div>
           <h3 className="font-display text-lg font-semibold">Password</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Change your password for email/password accounts.
           </p>
         </div>
@@ -177,7 +189,7 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
           onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
-            startTransition(async () => {
+            run("password", async () => {
               const result = await changePasswordAction({
                 currentPassword: String(fd.get("currentPassword") ?? ""),
                 newPassword: String(fd.get("newPassword") ?? ""),
@@ -192,33 +204,55 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
         >
           <div className="space-y-1.5">
             <Label htmlFor="currentPassword">Current password</Label>
-            <Input id="currentPassword" name="currentPassword" type="password" required />
+            <Input
+              id="currentPassword"
+              name="currentPassword"
+              type="password"
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="newPassword">New password</Label>
-            <Input id="newPassword" name="newPassword" type="password" required minLength={8} />
+            <Input
+              id="newPassword"
+              name="newPassword"
+              type="password"
+              required
+              minLength={8}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input id="confirmPassword" name="confirmPassword" type="password" required minLength={8} />
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              minLength={8}
+            />
           </div>
-          <Button type="submit" variant="outline" disabled={pending}>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={pending}
+            loading={isRunning("password")}
+          >
             Update password
           </Button>
         </form>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-destructive/40 bg-destructive/5 p-5">
+      <section className="border-destructive/40 bg-destructive/5 space-y-4 rounded-2xl border p-5">
         <div>
-          <h3 className="font-display text-lg font-semibold text-destructive">
+          <h3 className="font-display text-destructive text-lg font-semibold">
             Soft delete account
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Deactivates your account and signs you out. Type DELETE to confirm.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="space-y-1.5 flex-1">
+          <div className="flex-1 space-y-1.5">
             <Label htmlFor="deleteConfirm">Confirmation</Label>
             <Input
               id="deleteConfirm"
@@ -231,9 +265,12 @@ export function SettingsForms({ initial }: SettingsFormsProps) {
             type="button"
             variant="destructive"
             disabled={pending || deleteConfirm !== "DELETE"}
+            loading={isRunning("delete")}
             onClick={() =>
-              startTransition(async () => {
-                const result = await softDeleteAccountAction({ confirm: "DELETE" });
+              run("delete", async () => {
+                const result = await softDeleteAccountAction({
+                  confirm: "DELETE",
+                });
                 if (result.success) {
                   toast.success(result.message);
                   window.location.href = "/api/auth/signout";

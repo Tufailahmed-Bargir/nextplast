@@ -46,7 +46,9 @@ function initialValue(props: EditPickupAddressDialogProps): PickupAddressValue {
 export function EditPickupAddressDialog(props: EditPickupAddressDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState<PickupAddressValue>(() => initialValue(props));
+  const [value, setValue] = useState<PickupAddressValue>(() =>
+    initialValue(props),
+  );
   const [errors, setErrors] = useState<PickupAddressErrors>({});
   const [pending, startTransition] = useTransition();
 
@@ -93,7 +95,9 @@ export function EditPickupAddressDialog(props: EditPickupAddressDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button type="button" variant="outline" size="sm" />}>
+      <DialogTrigger
+        render={<Button type="button" variant="outline" size="sm" />}
+      >
         <Pencil className="h-3.5 w-3.5" /> Edit address
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -119,7 +123,7 @@ export function EditPickupAddressDialog(props: EditPickupAddressDialogProps) {
           >
             Cancel
           </Button>
-          <Button type="button" onClick={save} disabled={pending}>
+          <Button type="button" onClick={save} loading={pending}>
             {pending ? "Saving…" : "Save address"}
           </Button>
         </DialogFooter>

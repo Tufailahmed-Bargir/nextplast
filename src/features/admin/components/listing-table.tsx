@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { formatCoin, formatWeight } from "@/utils/coin";
 import { formatRelative } from "@/utils/date";
 import { reviewListingAction } from "@/features/admin/actions/admin-actions";
 import { Button } from "@/components/ui/button";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 export interface ListingTableRow {
   id: string;
@@ -46,7 +47,7 @@ interface ListingTableProps {
 
 export function ListingTable({ listings }: ListingTableProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("ALL");
 
@@ -64,7 +65,7 @@ export function ListingTable({ listings }: ListingTableProps) {
   }, [listings, q, status]);
 
   function quickApprove(listingId: string) {
-    startTransition(async () => {
+    run(listingId, async () => {
       const result = await reviewListingAction({
         listingId,
         decision: "APPROVE",
@@ -82,7 +83,7 @@ export function ListingTable({ listings }: ListingTableProps) {
     <Card>
       <CardHeader>
         <CardTitle>Plastic listings</CardTitle>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           All listings from Prisma — filter by status or search seller.
         </p>
       </CardHeader>
@@ -101,13 +102,13 @@ export function ListingTable({ listings }: ListingTableProps) {
         </div>
 
         {filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No listings match.</p>
+          <p className="text-muted-foreground text-sm">No listings match.</p>
         ) : (
           <div className="space-y-3">
             {filtered.map((l) => (
               <div
                 key={l.id}
-                className="flex flex-col gap-3 rounded-xl border border-border p-4 lg:flex-row lg:items-center lg:justify-between"
+                className="border-border flex flex-col gap-3 rounded-xl border p-4 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +126,7 @@ export function ListingTable({ listings }: ListingTableProps) {
                     {l.user.name ?? l.user.email} · {l.itemCount} item(s) ·{" "}
                     {l.imageCount} image(s)
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Claimed{" "}
                     {l.claimedWeightGrams != null
                       ? formatWeight(l.claimedWeightGrams)
@@ -144,7 +145,8 @@ export function ListingTable({ listings }: ListingTableProps) {
                       href="/admin/pickup-requests"
                       className="text-xs text-emerald-700 underline dark:text-emerald-300"
                     >
-                      Pickup {l.pickupStatus?.toLowerCase().replaceAll("_", " ")}
+                      Pickup{" "}
+                      {l.pickupStatus?.toLowerCase().replaceAll("_", " ")}
                     </Link>
                   ) : null}
                 </div>
@@ -153,6 +155,7 @@ export function ListingTable({ listings }: ListingTableProps) {
                     type="button"
                     size="sm"
                     disabled={pending}
+                    loading={isRunning(l.id)}
                     onClick={() => quickApprove(l.id)}
                   >
                     Approve

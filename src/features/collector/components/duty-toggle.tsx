@@ -24,7 +24,7 @@ export function DutyToggle({ isOnDuty }: DutyToggleProps) {
         type="button"
         size="sm"
         variant="outline"
-        disabled={pending}
+        loading={pending}
         onClick={() => {
           startTransition(async () => {
             const result = await toggleDutyAction({ isOnDuty: !isOnDuty });

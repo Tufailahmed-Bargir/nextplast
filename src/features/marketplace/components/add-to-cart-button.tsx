@@ -44,7 +44,8 @@ export function AddToCartButton({
     <Button
       type="button"
       size={size}
-      disabled={disabled || pending}
+      disabled={disabled}
+      loading={pending}
       onClick={add}
       className={cn(className)}
     >

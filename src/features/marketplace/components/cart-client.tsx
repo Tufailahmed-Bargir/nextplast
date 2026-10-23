@@ -1,12 +1,12 @@
 "use client";
 
-import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Loader2, Minus, Plus, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { usePendingAction } from "@/hooks/use-pending-action";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   removeCartAction,
@@ -40,10 +40,10 @@ interface CartClientProps {
 
 export function CartClient({ cart }: CartClientProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
 
   function setQty(productId: string, quantity: number) {
-    startTransition(async () => {
+    run(`qty:${productId}`, async () => {
       const result = await updateCartAction({ productId, quantity });
       if (!result.success) {
         toast.error(result.error);
@@ -54,7 +54,7 @@ export function CartClient({ cart }: CartClientProps) {
   }
 
   function remove(productId: string) {
-    startTransition(async () => {
+    run(`remove:${productId}`, async () => {
       const result = await removeCartAction(productId);
       if (!result.success) {
         toast.error(result.error);
@@ -87,7 +87,7 @@ export function CartClient({ cart }: CartClientProps) {
         {cart.items.map((item) => (
           <Card key={item.productId}>
             <CardContent className="flex gap-4 p-4">
-              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+              <div className="bg-muted relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
                 {item.product.imageUrl ? (
                   <Image
                     src={item.product.imageUrl}
@@ -120,16 +120,21 @@ export function CartClient({ cart }: CartClientProps) {
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="w-8 text-center text-sm font-medium">
-                    {item.quantity}
+                  <span className="flex w-8 justify-center text-sm font-medium">
+                    {isRunning(`qty:${item.productId}`) ? (
+                      <Loader2
+                        className="text-muted-foreground h-4 w-4 animate-spin"
+                        aria-label="Updating quantity"
+                      />
+                    ) : (
+                      item.quantity
+                    )}
                   </span>
                   <Button
                     type="button"
                     size="icon"
                     variant="outline"
-                    disabled={
-                      pending || item.quantity >= item.product.stock
-                    }
+                    disabled={pending || item.quantity >= item.product.stock}
                     onClick={() => setQty(item.productId, item.quantity + 1)}
                   >
                     <Plus className="h-4 w-4" />
@@ -139,6 +144,7 @@ export function CartClient({ cart }: CartClientProps) {
                     size="icon"
                     variant="ghost"
                     disabled={pending}
+                    loading={isRunning(`remove:${item.productId}`)}
                     onClick={() => remove(item.productId)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -173,7 +179,7 @@ export function CartClient({ cart }: CartClientProps) {
             <span className="text-muted-foreground">Subtotal (coins)</span>
             <span>{formatCoin(cart.subtotalCoins)}</span>
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Hybrid split and shipping are calculated at checkout.
           </p>
           <Link href="/checkout" className={cn(buttonVariants(), "w-full")}>

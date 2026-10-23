@@ -75,7 +75,13 @@ export function PickupWorkflowPanel({
     [weight.actualWeightGrams, quality],
   );
 
-  function run(action: () => Promise<{ success: boolean; error?: string; message?: string }>) {
+  function run(
+    action: () => Promise<{
+      success: boolean;
+      error?: string;
+      message?: string;
+    }>,
+  ) {
     startTransition(async () => {
       const result = await action();
       if (!result.success) {
@@ -110,7 +116,7 @@ export function PickupWorkflowPanel({
               {status === "ASSIGNED" ? (
                 <Button
                   type="button"
-                  disabled={pending}
+                  loading={pending}
                   onClick={() => run(() => acceptPickupAction(pickupId))}
                 >
                   Accept pickup
@@ -120,7 +126,7 @@ export function PickupWorkflowPanel({
                 <Button
                   type="button"
                   variant="secondary"
-                  disabled={pending}
+                  loading={pending}
                   onClick={() => run(() => markArrivedAction(pickupId))}
                 >
                   Verify arrival
@@ -192,7 +198,7 @@ export function PickupWorkflowPanel({
 
             <Button
               type="button"
-              disabled={pending}
+              loading={pending}
               onClick={() =>
                 run(async () => {
                   const result = await completeVerificationAction({

@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -35,7 +41,9 @@ export interface PickupAddressValue {
 export type PickupAddressErrors = Partial<Record<keyof AddressParts, string>>;
 
 /** Field-level address errors, including the India Post PIN check result. */
-export function validatePickupAddress(value: PickupAddressValue): PickupAddressErrors {
+export function validatePickupAddress(
+  value: PickupAddressValue,
+): PickupAddressErrors {
   const errors: PickupAddressErrors = {};
   const parsed = pickupAddressSchema.safeParse(value.addressParts);
   if (!parsed.success) {
@@ -76,8 +84,7 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
     | { success: false; error?: { message?: string } }
     | null;
   if (!res.ok || !body || !body.success) {
-    const message =
-      body && !body.success ? body.error?.message : undefined;
+    const message = body && !body.success ? body.error?.message : undefined;
     throw new Error(message ?? "Request failed");
   }
   return body.data;
@@ -234,7 +241,9 @@ export function PickupAddressFields<T extends PickupAddressValue>({
 
   function fillFromCurrentLocation() {
     if (!("geolocation" in navigator)) {
-      toast.error("Your browser does not support location. Please type your address.");
+      toast.error(
+        "Your browser does not support location. Please type your address.",
+      );
       return;
     }
     setLocating(true);
@@ -281,14 +290,17 @@ export function PickupAddressFields<T extends PickupAddressValue>({
 
   const lookup = value.pinLookup?.pinCode === pin ? value.pinLookup : null;
   const showNoMatches =
-    searchOpen && !searching && query.trim().length >= 3 && suggestions.length === 0;
+    searchOpen &&
+    !searching &&
+    query.trim().length >= 3 &&
+    suggestions.length === 0;
   const hasCoords = value.latitude != null && value.longitude != null;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             value={query}
             onChange={(e) => {
@@ -304,7 +316,9 @@ export function PickupAddressFields<T extends PickupAddressValue>({
                 setActiveIndex((i) => (i + 1) % suggestions.length);
               } else if (e.key === "ArrowUp") {
                 e.preventDefault();
-                setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+                setActiveIndex((i) =>
+                  i <= 0 ? suggestions.length - 1 : i - 1,
+                );
               } else if (e.key === "Enter" && activeIndex >= 0) {
                 e.preventDefault();
                 selectSuggestion(suggestions[activeIndex]);
@@ -313,16 +327,16 @@ export function PickupAddressFields<T extends PickupAddressValue>({
               }
             }}
             placeholder="Search your area, society or street…"
-            className="pl-9 pr-9"
+            className="pr-9 pl-9"
             aria-label="Search address"
             autoComplete="off"
           />
           {searching ? (
-            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            <Loader2 className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin" />
           ) : null}
 
           {searchOpen && (suggestions.length > 0 || showNoMatches) ? (
-            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
+            <div className="border-border bg-popover absolute z-20 mt-1 w-full overflow-hidden rounded-xl border shadow-lg">
               {suggestions.map((s, idx) => (
                 <button
                   key={s.id}
@@ -332,7 +346,7 @@ export function PickupAddressFields<T extends PickupAddressValue>({
                     selectSuggestion(s);
                   }}
                   className={cn(
-                    "flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-muted",
+                    "hover:bg-muted flex w-full items-start gap-2 px-3 py-2 text-left text-sm",
                     idx === activeIndex && "bg-muted",
                   )}
                 >
@@ -340,7 +354,7 @@ export function PickupAddressFields<T extends PickupAddressValue>({
                   <span>
                     <span className="block font-medium">{s.label}</span>
                     {s.secondary ? (
-                      <span className="block text-xs text-muted-foreground">
+                      <span className="text-muted-foreground block text-xs">
                         {s.secondary}
                       </span>
                     ) : null}
@@ -348,11 +362,11 @@ export function PickupAddressFields<T extends PickupAddressValue>({
                 </button>
               ))}
               {showNoMatches ? (
-                <p className="px-3 py-2 text-sm text-muted-foreground">
+                <p className="text-muted-foreground px-3 py-2 text-sm">
                   No matches. Type your address in the fields below.
                 </p>
               ) : null}
-              <p className="border-t border-border px-3 py-1 text-[10px] text-muted-foreground">
+              <p className="border-border text-muted-foreground border-t px-3 py-1 text-[10px]">
                 Suggestions © OpenStreetMap contributors
               </p>
             </div>
@@ -362,13 +376,9 @@ export function PickupAddressFields<T extends PickupAddressValue>({
           type="button"
           variant="outline"
           onClick={fillFromCurrentLocation}
-          disabled={locating}
+          loading={locating}
         >
-          {locating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <LocateFixed className="h-4 w-4" />
-          )}
+          <LocateFixed className="h-4 w-4" />
           {locating ? "Locating…" : "Use my current location"}
         </Button>
       </div>
@@ -379,7 +389,7 @@ export function PickupAddressFields<T extends PickupAddressValue>({
           Map location saved for the collector.
           <button
             type="button"
-            className="inline-flex items-center gap-0.5 text-muted-foreground underline hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5 underline"
             onClick={() =>
               onChange((prev) => ({ ...prev, latitude: null, longitude: null }))
             }
@@ -435,13 +445,15 @@ export function PickupAddressFields<T extends PickupAddressValue>({
           />
           {lookup?.status === "found" && lookup.localities.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-xs text-muted-foreground">Areas in this PIN:</span>
+              <span className="text-muted-foreground text-xs">
+                Areas in this PIN:
+              </span>
               {lookup.localities.map((locality) => (
                 <button
                   key={locality}
                   type="button"
                   onClick={() => addLocality(locality)}
-                  className="rounded-full border border-border px-2 py-0.5 text-xs hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                  className="border-border rounded-full border px-2 py-0.5 text-xs hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950"
                 >
                   {locality}
                 </button>
@@ -466,7 +478,9 @@ export function PickupAddressFields<T extends PickupAddressValue>({
             autoComplete="postal-code"
             aria-invalid={Boolean(errors.pinCode)}
           />
-          {!errors.pinCode ? <PinStatus checking={pinChecking} lookup={lookup} /> : null}
+          {!errors.pinCode ? (
+            <PinStatus checking={pinChecking} lookup={lookup} />
+          ) : null}
         </Field>
         <Field
           id="addr-city"
@@ -527,7 +541,7 @@ function Field({
     <div className={cn("space-y-1.5", className)}>
       <Label htmlFor={id}>{label}</Label>
       {children}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ? <p className="text-destructive text-xs">{error}</p> : null}
     </div>
   );
 }
@@ -541,7 +555,7 @@ function PinStatus({
 }) {
   if (checking) {
     return (
-      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+      <p className="text-muted-foreground flex items-center gap-1 text-xs">
         <Loader2 className="h-3 w-3 animate-spin" /> Checking PIN…
       </p>
     );
@@ -557,13 +571,13 @@ function PinStatus({
   }
   if (lookup.status === "not_found") {
     return (
-      <p className="flex items-center gap-1 text-xs text-destructive">
+      <p className="text-destructive flex items-center gap-1 text-xs">
         <AlertCircle className="h-3 w-3" /> This PIN code doesn&apos;t exist
       </p>
     );
   }
   return (
-    <p className="text-xs text-muted-foreground">
+    <p className="text-muted-foreground text-xs">
       Couldn&apos;t verify PIN right now. You can still continue.
     </p>
   );

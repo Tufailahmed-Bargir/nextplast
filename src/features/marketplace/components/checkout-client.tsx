@@ -143,12 +143,12 @@ export function CheckoutClient({
 
   if (placedId) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 animate-scale-in">
+      <div className="animate-scale-in flex flex-col items-center justify-center py-20">
         <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950">
           <CheckCircle2 className="h-12 w-12 text-emerald-600" />
         </div>
         <h2 className="font-display text-2xl font-bold">Order placed!</h2>
-        <p className="mt-2 max-w-md text-center text-muted-foreground">
+        <p className="text-muted-foreground mt-2 max-w-md text-center">
           Your eco products are being processed. Order #{placedId.slice(0, 8)}.
         </p>
         <div className="mt-8 flex gap-3">
@@ -170,7 +170,7 @@ export function CheckoutClient({
     <div className="space-y-6">
       <Link
         href="/cart"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm"
       >
         <ArrowLeft className="h-4 w-4" /> Back to cart
       </Link>
@@ -191,11 +191,11 @@ export function CheckoutClient({
                       <button
                         key={`${a.pinCode}-${idx}`}
                         type="button"
-                        className="rounded-xl border border-border px-3 py-2 text-left text-sm hover:bg-muted/50"
+                        className="border-border hover:bg-muted/50 rounded-xl border px-3 py-2 text-left text-sm"
                         onClick={() => setAddress(a)}
                       >
                         <p className="font-medium">{a.label ?? a.fullName}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {a.addressLine1}, {a.city}
                         </p>
                       </button>
@@ -336,7 +336,7 @@ export function CheckoutClient({
                   {items.map((item) => (
                     <li
                       key={item.productId}
-                      className="flex justify-between rounded-xl bg-muted/40 px-3 py-2"
+                      className="bg-muted/40 flex justify-between rounded-xl px-3 py-2"
                     >
                       <span>
                         {item.name} × {item.quantity}
@@ -370,7 +370,7 @@ export function CheckoutClient({
                   >
                     Back
                   </Button>
-                  <Button type="button" disabled={pending} onClick={place}>
+                  <Button type="button" loading={pending} onClick={place}>
                     {pending ? "Placing…" : "Place order"}
                   </Button>
                 </div>
@@ -396,7 +396,7 @@ export function CheckoutClient({
               <span className="text-muted-foreground">Shipping</span>
               <span>{shipping === 0 ? "Free" : formatInr(shipping)}</span>
             </p>
-            <p className="flex justify-between border-t border-border pt-2 font-semibold">
+            <p className="border-border flex justify-between border-t pt-2 font-semibold">
               <span>Coins used</span>
               <span>{formatCoin(preview.coinAmount)}</span>
             </p>

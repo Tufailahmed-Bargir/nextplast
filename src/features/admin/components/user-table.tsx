@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,13 +11,11 @@ import { SearchBar } from "@/features/admin/components/search-bar";
 import { FilterPanel } from "@/features/admin/components/filter-panel";
 import { setUserActiveAction } from "@/features/admin/actions/admin-actions";
 import { assignRoleAction } from "@/features/auth/actions/auth-actions";
-import {
-  adminAssignableRoles,
-  type AssignRoleInput,
-} from "@/validations/auth";
+import { adminAssignableRoles, type AssignRoleInput } from "@/validations/auth";
 import { ROLE_LABELS, type UserRole } from "@/constants/roles";
 import { formatCoin, formatWeight } from "@/utils/coin";
 import { formatRelative } from "@/utils/date";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 export interface UserTableRow {
   id: string;
@@ -44,7 +43,7 @@ const ROLE_FILTERS = [
 
 export function UserTable({ users, currentUserId }: UserTableProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("ALL");
 
@@ -58,7 +57,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
   }, [users, q, role]);
 
   function changeRole(userId: string, next: AssignRoleInput["role"]) {
-    startTransition(async () => {
+    run(`role:${userId}`, async () => {
       const result = await assignRoleAction({ userId, role: next });
       if (!result.success) {
         toast.error(result.error);
@@ -70,7 +69,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
   }
 
   function toggleActive(userId: string, isActive: boolean) {
-    startTransition(async () => {
+    run(`active:${userId}`, async () => {
       const result = await setUserActiveAction({ userId, isActive });
       if (!result.success) {
         toast.error(result.error);
@@ -85,8 +84,9 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
     <Card>
       <CardHeader>
         <CardTitle className="font-display text-xl">Users</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Search, filter by role, assign Collector/Recycler, and suspend accounts.
+        <p className="text-muted-foreground text-sm">
+          Search, filter by role, assign Collector/Recycler, and suspend
+          accounts.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -95,10 +95,10 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
           <FilterPanel options={ROLE_FILTERS} value={role} onChange={setRole} />
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="border-border overflow-x-auto rounded-xl border">
           <table className="w-full min-w-[720px]">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr className="border-border bg-muted/40 text-muted-foreground border-b text-left text-xs tracking-wider uppercase">
                 <th className="px-4 py-3">User</th>
                 <th className="px-4 py-3">Role</th>
                 <th className="px-4 py-3">Coins</th>
@@ -121,13 +121,15 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                 return (
                   <tr
                     key={user.id}
-                    className="border-b border-border last:border-0 hover:bg-muted/30"
+                    className="border-border hover:bg-muted/30 border-b last:border-0"
                   >
                     <td className="px-4 py-3">
                       <p className="text-sm font-semibold">
                         {user.name || "Unnamed"}
                       </p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {user.email}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
                       {locked || !selectable ? (
@@ -135,37 +137,47 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                           {ROLE_LABELS[user.role] ?? user.role}
                         </Badge>
                       ) : (
-                        <select
-                          className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm"
-                          defaultValue={user.role}
-                          disabled={pending}
-                          onChange={(e) =>
-                            changeRole(
-                              user.id,
-                              e.target.value as AssignRoleInput["role"],
-                            )
-                          }
-                        >
-                          {adminAssignableRoles.map((r) => (
-                            <option key={r} value={r}>
-                              {ROLE_LABELS[r]}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="border-input h-9 rounded-lg border bg-transparent px-2 text-sm"
+                            defaultValue={user.role}
+                            disabled={pending}
+                            onChange={(e) =>
+                              changeRole(
+                                user.id,
+                                e.target.value as AssignRoleInput["role"],
+                              )
+                            }
+                          >
+                            {adminAssignableRoles.map((r) => (
+                              <option key={r} value={r}>
+                                {ROLE_LABELS[r]}
+                              </option>
+                            ))}
+                          </select>
+                          {isRunning(`role:${user.id}`) ? (
+                            <Loader2
+                              className="text-muted-foreground h-4 w-4 animate-spin"
+                              aria-label="Saving"
+                            />
+                          ) : null}
+                        </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm font-semibold coin-text">
+                    <td className="coin-text px-4 py-3 text-sm font-semibold">
                       {formatCoin(user.coins)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                    <td className="text-muted-foreground px-4 py-3 text-sm">
                       {formatWeight(user.recycledGrams)}
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={user.isActive ? "secondary" : "destructive"}>
+                      <Badge
+                        variant={user.isActive ? "secondary" : "destructive"}
+                      >
                         {user.isActive ? "active" : "suspended"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                    <td className="text-muted-foreground px-4 py-3 text-sm">
                       {formatRelative(
                         typeof user.createdAt === "string"
                           ? new Date(user.createdAt)
@@ -179,6 +191,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
                           size="sm"
                           variant="outline"
                           disabled={pending}
+                          loading={isRunning(`active:${user.id}`)}
                           onClick={() => toggleActive(user.id, !user.isActive)}
                         >
                           {user.isActive ? "Suspend" : "Activate"}
@@ -191,7 +204,7 @@ export function UserTable({ users, currentUserId }: UserTableProps) {
             </tbody>
           </table>
           {filtered.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No users match.</p>
+            <p className="text-muted-foreground p-4 text-sm">No users match.</p>
           ) : null}
         </div>
       </CardContent>

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { updateCollectorAction } from "@/features/admin/actions/admin-actions";
+import { usePendingAction } from "@/hooks/use-pending-action";
 
 export interface CollectorTableRow {
   id: string;
@@ -26,7 +28,7 @@ interface CollectorTableProps {
 
 export function CollectorTable({ collectors }: CollectorTableProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { pending, run, isRunning } = usePendingAction();
   const [zones, setZones] = useState<Record<string, string>>(() =>
     Object.fromEntries(collectors.map((c) => [c.id, c.zone ?? "Default"])),
   );
@@ -43,7 +45,7 @@ export function CollectorTable({ collectors }: CollectorTableProps) {
     isOnDuty?: boolean,
     zone?: string,
   ) {
-    startTransition(async () => {
+    run(collectorId, async () => {
       const result = await updateCollectorAction({
         collectorId,
         verificationStatus,
@@ -63,22 +65,22 @@ export function CollectorTable({ collectors }: CollectorTableProps) {
     <Card>
       <CardHeader>
         <CardTitle>Collectors</CardTitle>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           New collectors start as Pending until approved for assignment.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
         {collectors.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No collectors yet.</p>
+          <p className="text-muted-foreground text-sm">No collectors yet.</p>
         ) : (
           collectors.map((c) => (
             <div
               key={c.id}
-              className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="border-border flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="font-semibold">{c.name ?? c.email}</p>
-                <p className="text-sm text-muted-foreground">{c.email}</p>
+                <p className="text-muted-foreground text-sm">{c.email}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge variant={c.isOnDuty ? "default" : "secondary"}>
                     {c.isOnDuty ? "On duty" : "Off duty"}
@@ -89,7 +91,7 @@ export function CollectorTable({ collectors }: CollectorTableProps) {
                   {!c.isActive ? (
                     <Badge variant="destructive">user suspended</Badge>
                   ) : null}
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     Done {c.completedPickups} · Active {c.activeAssigned}
                   </span>
                 </div>
@@ -108,9 +110,7 @@ export function CollectorTable({ collectors }: CollectorTableProps) {
                       update(
                         c.id,
                         c.verificationStatus as
-                          | "PENDING"
-                          | "APPROVED"
-                          | "SUSPENDED",
+                          "PENDING" | "APPROVED" | "SUSPENDED",
                         c.isOnDuty,
                         next,
                       );
@@ -119,7 +119,7 @@ export function CollectorTable({ collectors }: CollectorTableProps) {
                   aria-label="Collector zone"
                 />
                 <select
-                  className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm"
+                  className="border-input h-9 rounded-lg border bg-transparent px-2 text-sm"
                   defaultValue={c.verificationStatus}
                   disabled={pending}
                   onChange={(e) =>
@@ -135,24 +135,24 @@ export function CollectorTable({ collectors }: CollectorTableProps) {
                   <option value="APPROVED">Approved</option>
                   <option value="SUSPENDED">Suspended</option>
                 </select>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  className="h-9"
                   disabled={pending}
-                  className="h-9 rounded-lg border border-input px-3 text-sm"
+                  loading={isRunning(c.id)}
                   onClick={() =>
                     update(
                       c.id,
                       c.verificationStatus as
-                        | "PENDING"
-                        | "APPROVED"
-                        | "SUSPENDED",
+                        "PENDING" | "APPROVED" | "SUSPENDED",
                       !c.isOnDuty,
                       zones[c.id],
                     )
                   }
                 >
                   {c.isOnDuty ? "Set off duty" : "Set on duty"}
-                </button>
+                </Button>
               </div>
             </div>
           ))

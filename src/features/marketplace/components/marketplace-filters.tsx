@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ export function MarketplaceFilters({ categories }: MarketplaceFiltersProps) {
     <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -71,6 +71,12 @@ export function MarketplaceFilters({ categories }: MarketplaceFiltersProps) {
               {s.label}
             </button>
           ))}
+          {pending ? (
+            <Loader2
+              className="text-muted-foreground h-4 w-4 animate-spin self-center"
+              aria-label="Updating results"
+            />
+          ) : null}
         </div>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -78,10 +84,10 @@ export function MarketplaceFilters({ categories }: MarketplaceFiltersProps) {
           type="button"
           onClick={() => push({ category: "all" })}
           className={cn(
-            "whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium",
+            "rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap",
             category === "all"
               ? "bg-emerald-600 text-white"
-              : "border border-border bg-background text-muted-foreground",
+              : "border-border bg-background text-muted-foreground border",
           )}
         >
           All
@@ -92,10 +98,10 @@ export function MarketplaceFilters({ categories }: MarketplaceFiltersProps) {
             type="button"
             onClick={() => push({ category: c.slug })}
             className={cn(
-              "whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium",
+              "rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap",
               category === c.slug
                 ? "bg-emerald-600 text-white"
-                : "border border-border bg-background text-muted-foreground",
+                : "border-border bg-background text-muted-foreground border",
             )}
           >
             {c.name}

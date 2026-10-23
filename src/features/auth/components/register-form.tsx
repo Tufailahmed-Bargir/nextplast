@@ -63,10 +63,10 @@ export function RegisterForm() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="font-display text-3xl font-bold text-foreground">
+      <h1 className="font-display text-foreground text-3xl font-bold">
         Create your account
       </h1>
-      <p className="mt-2 text-muted-foreground">
+      <p className="text-muted-foreground mt-2">
         Join NexPlast and start earning Nature Coins
       </p>
 
@@ -74,7 +74,7 @@ export function RegisterForm() {
         <div className="space-y-2">
           <Label htmlFor="name">Full name</Label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <User className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="name"
               placeholder="Aarav Patel"
@@ -84,14 +84,14 @@ export function RegisterForm() {
             />
           </div>
           {errors.name ? (
-            <p className="text-sm text-destructive">{errors.name.message}</p>
+            <p className="text-destructive text-sm">{errors.name.message}</p>
           ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="email"
               type="email"
@@ -102,17 +102,17 @@ export function RegisterForm() {
             />
           </div>
           {errors.email ? (
-            <p className="text-sm text-destructive">{errors.email.message}</p>
+            <p className="text-destructive text-sm">{errors.email.message}</p>
           ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="role">I want to join as</Label>
           <div className="relative">
-            <Briefcase className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Briefcase className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <select
               id="role"
-              className="flex h-10 w-full appearance-none rounded-md border border-input bg-transparent py-2 pl-10 pr-8 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-input focus-visible:border-ring focus-visible:ring-ring/50 flex h-10 w-full appearance-none rounded-md border bg-transparent py-2 pr-8 pl-10 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
               {...register("role")}
             >
               {publicRegisterRoles.map((role) => (
@@ -123,14 +123,14 @@ export function RegisterForm() {
             </select>
           </div>
           {errors.role ? (
-            <p className="text-sm text-destructive">{errors.role.message}</p>
+            <p className="text-destructive text-sm">{errors.role.message}</p>
           ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="password"
               type="password"
@@ -141,14 +141,16 @@ export function RegisterForm() {
             />
           </div>
           {errors.password ? (
-            <p className="text-sm text-destructive">{errors.password.message}</p>
+            <p className="text-destructive text-sm">
+              {errors.password.message}
+            </p>
           ) : null}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="confirmPassword"
               type="password"
@@ -159,13 +161,13 @@ export function RegisterForm() {
             />
           </div>
           {errors.confirmPassword ? (
-            <p className="text-sm text-destructive">
+            <p className="text-destructive text-sm">
               {errors.confirmPassword.message}
             </p>
           ) : null}
         </div>
 
-        <Button type="submit" className="w-full" disabled={pending} size="lg">
+        <Button type="submit" className="w-full" loading={pending} size="lg">
           {pending ? "Creating account..." : "Create account"}
           <ArrowRight className="h-4 w-4" />
         </Button>
@@ -173,10 +175,10 @@ export function RegisterForm() {
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
+          <div className="border-border w-full border-t" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-background px-4 text-xs text-muted-foreground">
+          <span className="bg-background text-muted-foreground px-4 text-xs">
             or continue with
           </span>
         </div>
@@ -187,15 +189,18 @@ export function RegisterForm() {
         variant="outline"
         className="w-full"
         size="lg"
-        disabled={googleLoading}
+        loading={googleLoading}
         onClick={handleGoogle}
       >
         Continue with Google
       </Button>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-8 text-center text-sm">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link
+          href="/login"
+          className="text-primary font-medium hover:underline"
+        >
           Log in
         </Link>
       </p>

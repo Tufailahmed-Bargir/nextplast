@@ -66,10 +66,10 @@ function LoginFormInner() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="font-display text-3xl font-bold text-foreground">
+      <h1 className="font-display text-foreground text-3xl font-bold">
         Welcome back
       </h1>
-      <p className="mt-2 text-muted-foreground">
+      <p className="text-muted-foreground mt-2">
         Log in to your NexPlast account
       </p>
 
@@ -77,7 +77,7 @@ function LoginFormInner() {
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="email"
               type="email"
@@ -88,7 +88,7 @@ function LoginFormInner() {
             />
           </div>
           {errors.email ? (
-            <p className="text-sm text-destructive">{errors.email.message}</p>
+            <p className="text-destructive text-sm">{errors.email.message}</p>
           ) : null}
         </div>
 
@@ -97,13 +97,13 @@ function LoginFormInner() {
             <Label htmlFor="password">Password</Label>
             <Link
               href="/forgot-password"
-              className="text-sm font-medium text-primary hover:underline"
+              className="text-primary text-sm font-medium hover:underline"
             >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               id="password"
               type="password"
@@ -114,11 +114,13 @@ function LoginFormInner() {
             />
           </div>
           {errors.password ? (
-            <p className="text-sm text-destructive">{errors.password.message}</p>
+            <p className="text-destructive text-sm">
+              {errors.password.message}
+            </p>
           ) : null}
         </div>
 
-        <Button type="submit" className="w-full" disabled={pending} size="lg">
+        <Button type="submit" className="w-full" loading={pending} size="lg">
           {pending ? "Signing in..." : "Log in"}
           <ArrowRight className="h-4 w-4" />
         </Button>
@@ -126,10 +128,10 @@ function LoginFormInner() {
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
+          <div className="border-border w-full border-t" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-background px-4 text-xs text-muted-foreground">
+          <span className="bg-background text-muted-foreground px-4 text-xs">
             or continue with
           </span>
         </div>
@@ -140,16 +142,19 @@ function LoginFormInner() {
         variant="outline"
         className="w-full"
         size="lg"
-        disabled={googleLoading}
+        loading={googleLoading}
         onClick={handleGoogle}
       >
         <GoogleIcon />
         Continue with Google
       </Button>
 
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="text-muted-foreground mt-8 text-center text-sm">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="font-medium text-primary hover:underline">
+        <Link
+          href="/register"
+          className="text-primary font-medium hover:underline"
+        >
           Create one
         </Link>
       </p>
@@ -186,7 +191,7 @@ function GoogleIcon() {
 export function LoginForm() {
   return (
     <Suspense
-      fallback={<div className="text-sm text-muted-foreground">Loading...</div>}
+      fallback={<div className="text-muted-foreground text-sm">Loading...</div>}
     >
       <LoginFormInner />
     </Suspense>
