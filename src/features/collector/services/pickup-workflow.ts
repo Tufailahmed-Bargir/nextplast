@@ -84,7 +84,8 @@ export async function assignPickupToCollector(input: {
     },
   });
   if (!pickup) throw new Error("PICKUP_NOT_FOUND");
-  if (pickup.status !== PickupStatus.REQUESTED || pickup.collectorId) {
+  if (pickup.collectorId) throw new Error("PICKUP_ALREADY_ASSIGNED");
+  if (pickup.status !== PickupStatus.REQUESTED) {
     throw new Error("PICKUP_NOT_ASSIGNABLE");
   }
   if (

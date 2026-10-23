@@ -39,6 +39,7 @@ function mapError(error: unknown): string {
   const map: Record<string, string> = {
     PICKUP_NOT_FOUND: "Pickup not found or not assigned to you.",
     PICKUP_NOT_ASSIGNABLE: "This pickup cannot be assigned.",
+    PICKUP_ALREADY_ASSIGNED: "This pickup is already assigned to a collector.",
     COLLECTOR_NOT_FOUND: "Collector profile not found.",
     NOT_A_COLLECTOR: "Collector role required.",
     INVALID_PICKUP_STATE: "This action is not allowed for the current pickup status.",

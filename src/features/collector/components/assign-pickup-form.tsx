@@ -67,11 +67,13 @@ export function AssignPickupForm({
               pickupId,
               collectorId,
             });
-            if (!result.success) {
+            if (result.success) {
+              toast.success(result.message ?? "Assigned");
+            } else {
               toast.error(result.error);
-              return;
             }
-            toast.success(result.message ?? "Assigned");
+            // Refresh either way so a stale card (e.g. assigned in another
+            // tab or by a double click) reflects the real pickup state.
             router.refresh();
           });
         }}
